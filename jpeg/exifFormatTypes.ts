@@ -112,8 +112,8 @@ export enum ExifSharpness {
 }
 
 export interface ExifLensSpecification {
-    minFocalLength: ExifRational;
-    maxFocalLength: ExifRational;
+    minFocalLength: ExifRational | null;
+    maxFocalLength: ExifRational | null;
     minFNumberForMinFocalLength: ExifRational | null; // null means "unknown" and rational value will be 0/0
     minFNumberForMaxFocalLength: ExifRational | null; // null means "unknown" and rational value will be 0/0
 }

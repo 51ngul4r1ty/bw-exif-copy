@@ -95,7 +95,10 @@ export function assertValueIsUnsignedByte(value: any): number {
     throw new Error(`Value "${value}" is not a number (unsigned byte), it is type "${typeof value}"`);
 }
 
-export function assertValueIsUnsignedRational(value: any, errorContextPrefix?: string): ExifRational {
+export function assertValueIsUnsignedRational(value: any, errorContextPrefix?: string): ExifRational | undefined {
+    if (!value) {
+        return undefined;
+    }
     if (value.hasOwnProperty("numerator") || value.hasOwnProperty("denominator")) {
         return value as ExifRational;
     }
@@ -115,7 +118,10 @@ export function rationalToNumber(value: ExifRational): number {
     return value.numerator / value.denominator;
 }
 
-export function rationalToMinFNumberRational(value: ExifRational): ExifRational | null {
+export function rationalToMinFNumberRational(value: ExifRational | undefined): ExifRational | null {
+    if (!value) {
+        return null;
+    }
     return value.denominator === 0 && value.numerator === 0 ? null : value;
 }
 
@@ -126,15 +132,15 @@ export function rationalArrayToLensSpecification(values: any[] | undefined): Exi
     if (values.length !== 4) {
         throw new Error(`Value is not an rational array with 4 items, it has length ${values.length}`);
     }
-    const typedValues: ExifRational[] = [];
+    const typedValues: (ExifRational | undefined)[] = [];
     let index = 0;
     values.forEach(value => {
         typedValues.push(assertValueIsUnsignedRational(value, `Lens Spec array item ${index}: `));
         index++;
     });
     return {
-        minFocalLength: typedValues[0],
-        maxFocalLength: typedValues[1],
+        minFocalLength: typedValues[0] || null,
+        maxFocalLength: typedValues[1] || null,
         minFNumberForMinFocalLength: rationalToMinFNumberRational(typedValues[2]),
         minFNumberForMaxFocalLength: rationalToMinFNumberRational(typedValues[3])
     }

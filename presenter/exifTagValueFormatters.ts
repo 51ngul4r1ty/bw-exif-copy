@@ -248,7 +248,7 @@ export function formatFlashMode(val: ExifFlashMode | undefined): string | undefi
     }
 }
 
-export function formatRationalInMillimeters(val: ExifRational | undefined) {
+export function formatRationalInMillimeters(val: ExifRational | undefined | null) {
     return `${formatRational(val)} mm`;
 }
 
