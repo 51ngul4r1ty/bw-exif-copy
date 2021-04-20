@@ -18,7 +18,7 @@
     "package": "npm run build"
   },
   "author": "",
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "devDependencies": {
     "typescript": "4.1.3"
   }
