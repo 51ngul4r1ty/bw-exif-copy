@@ -1,0 +1,12 @@
+export const FORMAT_UNSIGNED_BYTE = 1;
+export const FORMAT_ASCII_STRINGS = 2;
+export const FORMAT_UNSIGNED_SHORT = 3;
+export const FORMAT_UNSIGNED_LONG = 4;
+export const FORMAT_UNSIGNED_RATIONAL = 5;
+export const FORMAT_SIGNED_BYTE = 6;
+export const FORMAT_UNDEFINED = 7;
+export const FORMAT_SIGNED_SHORT = 8;
+export const FORMAT_SIGNED_LONG = 9;
+export const FORMAT_SIGNED_RATIONAL = 10;
+export const FORMAT_SINGLE_FLOAT = 11;
+export const FORMAT_DOUBLE_FLOAT = 12;
