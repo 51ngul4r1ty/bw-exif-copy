@@ -30,6 +30,8 @@ Exif Tag Info
 
 `https://www.awaresystems.be/imaging/tiff/tifftags/privateifd/exif/exposuremode.html`
 
+`https://www.exif.org/Exif2-2.PDF`
+
 GPS TagInfo
 -----------
 
