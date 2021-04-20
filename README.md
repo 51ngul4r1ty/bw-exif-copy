@@ -1,7 +1,7 @@
 Using
 =====
 
-* exif-copy {source file} {target file}
+* bw-exif-copy {source file} {target file}
 
 Future Enhancements
 ===================
