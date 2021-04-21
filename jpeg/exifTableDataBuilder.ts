@@ -2,7 +2,6 @@
 import { getConvertedValuesForDirectoryEntry } from "./exifTableDataItemBuilder.ts";
 import {
     numberToCbCrPositioning,
-    numberToOrientation,
     numberToResUnit,
     numberToMeteringMode,
     numberToLightSource,
@@ -21,7 +20,6 @@ import {
 } from "./exifTagValueConverters.ts";
 import { errorLog } from "../misc/errorLog.ts";
 import { numberToHexString } from "./hexUtils.ts";
-// import { consoleLogExifBufferAsString } from "./exifParsingDebugger.ts";
 
 // consts/enums
 import { FORMAT_ASCII_STRINGS, FORMAT_UNSIGNED_SHORT, FORMAT_UNSIGNED_LONG, FORMAT_UNSIGNED_RATIONAL } from "./exifFormatConsts.ts";
@@ -32,7 +30,6 @@ import {
     EXIF_DEVICE_SOFTWARE_TAG_NUMBER,
     EXIF_GPSINFO_TAG_NUMBER,
     EXIF_IMAGE_DESCRIPTION_TAG_NUMBER,
-    EXIF_IMAGE_ORIENTATION_TAG_NUMBER,
     EXIF_IMAGE_RESOLUTION_UNIT,
     EXIF_IMAGE_WHITEPOINT_TAG_NUMBER,
     EXIF_IMAGE_XRESOLUTION_TAG_NUMBER,
@@ -63,7 +60,6 @@ import {
     EXIF_METERING_MODE,
     EXIF_LIGHT_SOURCE,
     TAG_NUMBER_INFO,
-    tagNumberToPropName,
     dashCaseString
 } from "./tagNumbers.ts";
 import * as tagNumbers from "./tagNumbers.ts";
@@ -72,22 +68,16 @@ import * as tagNumbers from "./tagNumbers.ts";
 import { ExifTableData } from "./exifFormatTypes.ts";
 import { ImageFileDirectoryData } from "./exifIfdDirectoryProcessor.ts";
 import { TiffByteOrder } from "./tiffTypes.ts";
-// import { ExifRational } from "./exifFormatTypes.ts";
 import { ExifBuffer } from "./exifBufferTypes.ts";
 
 export function supplementExifTableData(
     exifTableData: ExifTableData | null,
     exifBuffer: ExifBuffer,
-    // currentStartingOffset: number,
-    // exifStartOffset: number,
     byteOrder: TiffByteOrder,
-    // exifDecoded: ExifDecoded
-    // ifdResult: ExifDecodedPart<ImageFileDirectoryPartTypeData>,
     ifdDirectoryData: ImageFileDirectoryData,
     logExifTagFields: boolean,
     logUnknownExifTagFields: boolean
 ): ExifTableData {
-//    const exifOffsetAdjust = currentStartingOffset - exifStartOffset;
     let newExifTableData: ExifTableData;
     if (!exifTableData) {
         newExifTableData = {
