@@ -17,6 +17,7 @@ import {
     numberToContrast,
     numberToExposureMode,
     numberToFlashMode,
+    numberToOrientation,
     numberToSaturation,
     numberToSceneCaptureType,
     numberToSharpness,
@@ -46,6 +47,7 @@ import {
     formatGpsTrackRef,
     formatLensSpecification,
     formatNumber as originalFormatNumber,
+    formatOrientation,
     formatRationalAsDecimal,
     formatRationalInMeters,
     formatRationalInMillimeters,
@@ -335,7 +337,12 @@ TAG_NUMBER_INFO[EXIF_IMAGE_ORIENTATION_TAG_NUMBER] = {
     format: "unsigned short",
     compoNo: 1,
     desc:
-        "The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is, '1' means upper left, '3' lower right, '6' upper right, '8' lower left, '9' undefined."
+        "The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is, '1' means upper left, '3' lower right, '6' upper right, '8' lower left, '9' undefined.",
+    converter: (args: ConverterArgs) => numberToOrientation(assertValueIsUnsignedShort(args.rawValue)),
+    formatter: formatOrientation,
+    displayName: "Orientation",
+    group: TagGroup.Image,
+    propName: "orientation"
 };
 TAG_NUMBER_INFO[EXIF_IMAGE_XRESOLUTION_TAG_NUMBER] = {
     name: "XResolution",

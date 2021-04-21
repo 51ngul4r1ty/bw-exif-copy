@@ -32,7 +32,12 @@ Exif Tag Info
 
 `https://www.exif.org/Exif2-2.PDF`
 
+IPTC Tag Info
+=============
+
+https://exiftool.org/TagNames/IPTC.html
+
 GPS TagInfo
------------
+===========
 
 `https://exiftool.org/TagNames/GPS.html`

@@ -144,12 +144,6 @@ export function supplementExifTableData(
                 newExifTableData.standardFields.date!.dateTime = date || undefined;
                 break;
             }
-            case EXIF_IMAGE_ORIENTATION_TAG_NUMBER: {
-                newExifTableData.standardFields.image!.orientation = numberToOrientation(
-                    assertValueIsUnsignedShort(convertedValues.value)
-                );
-                break;
-            }
             case EXIF_IMAGE_RESOLUTION_UNIT: {
                 newExifTableData.standardFields.image!.resolutionUnit = numberToResUnit(
                     assertValueIsUnsignedShort(convertedValues.value)

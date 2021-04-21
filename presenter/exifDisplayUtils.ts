@@ -405,5 +405,6 @@ export function buildExifDisplayTable(
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IMAGE_WIDTH);
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IMAGE_LENGTH);
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IPTC_NAA);
+    addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IMAGE_ORIENTATION_TAG_NUMBER);
     return result;
 }
