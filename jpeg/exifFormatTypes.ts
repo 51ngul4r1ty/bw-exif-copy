@@ -187,6 +187,7 @@ export interface ExifTableData {
             dateTime?: Date;
             exifInteroperabilityOffset?: number; // offset to more EXIF data (ExifR98)
             exifOffset?: number; // offset to more EXIF data
+            iptcMetadata?: number[]; // IPTC/NAA metadata
             exposureBiasValue?: ExifRational;
             gpsInfo?: number; // offset to GPS info
             imageDescription?: string;
@@ -196,6 +197,8 @@ export interface ExifTableData {
             orientation?: ExifOrientation;
             pixelHeight?: number;
             pixelWidth?: number;
+            imageLength?: number;
+            imageWidth?: number;
             primaryChromaticities?: ExifRational;
             printImageMatchingOffset?: number; // offset to PrintImageMatching data
             resolutionUnit?: ExifResolutionUnit;

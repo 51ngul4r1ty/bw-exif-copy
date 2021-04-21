@@ -402,5 +402,8 @@ export function buildExifDisplayTable(
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_GPS_TIME_STAMP);
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_GPS_TRACK);
     addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_GPS_TRACK_REF);
+    addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IMAGE_WIDTH);
+    addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IMAGE_LENGTH);
+    addTableRowFromTagNumberInfo(result, exifTable, tagNumbers.EXIF_IPTC_NAA);
     return result;
 }

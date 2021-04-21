@@ -93,6 +93,9 @@ export interface TagNumberInfoItem {
 }
 
 export const EXIF_OFFSET_TAG_NUMBER = 0x8769;
+
+export const EXIF_IMAGE_WIDTH = 0x0100;
+export const EXIF_IMAGE_LENGTH = 0x0101;
 export const EXIF_IMAGE_DESCRIPTION_TAG_NUMBER = 0x010e;
 export const EXIF_DEVICE_MAKE_TAG_NUMBER = 0x010f;
 export const EXIF_DEVICE_MODEL_TAG_NUMBER = 0x0110;
@@ -114,6 +117,7 @@ export const EXIF_IMAGE_HEIGHT_TAG_NUMBER = 0xa003;
 export const EXIF_EXPOSURE_TIME = 0x829a;
 
 export const EXIF_F_NUMBER = 0x829d;
+export const EXIF_IPTC_NAA = 0x83BB;
 export const EXIF_EXPOSURE_PROGRAM = 0x8822;
 export const EXIF_ISO_SPEED_RATINGS = 0x8827;
 export const EXIF_VERSION = 0x9000;
@@ -185,8 +189,6 @@ export const TAG_NUMBER_INFO: { [tagNumber: number]: TagNumberInfoItem } = {
     // TAG_NUMBER_INFO[EXIF_EXPOSURE_TIME] = {name: "ExposureTime", format: "unsigned rational", compoNo: 1, desc: "Exposure time (reciprocal of shutter speed). Unit is second." };
     /* Tags used by IFD1 (thumbnail image) */
     /*
-  0x0100	ImageWidth	unsigned short/long	1	Shows size of thumbnail image.
-  0x0101	ImageLength	unsigned short/long	1
   0x0102	BitsPerSample	unsigned short	3	When image format is no compression, this value shows the number of bits per component for each pixel. Usually this value is '8,8,8'
   0x0103	Compression	unsigned short	1	Shows compression method. '1' means no compression, '6' means JPEG compression.
   0x0106	PhotometricInterpretation	unsigned short	1	Shows the color space of the image data components. '1' means monochrome, '2' means RGB, '6' means YCbCr.
@@ -286,6 +288,29 @@ TAG_NUMBER_INFO[EXIF_OFFSET_TAG_NUMBER] = {
     format: "unsigned long",
     compoNo: 1,
     desc: "Offset to Exif Sub IFD"
+};
+
+TAG_NUMBER_INFO[EXIF_IMAGE_WIDTH] = {
+    name: "ImageWidth",
+    format: "unsigned short",
+    compoNo: 1,
+    desc: "Image width",
+    converter: (args: ConverterArgs) => assertValueIsUnsignedShort(args.rawValue),
+    formatter: formatNumberWrapper,
+    displayName: "Image Width (px)",
+    group: TagGroup.Image,
+    propName: "imageWidth"
+};
+TAG_NUMBER_INFO[EXIF_IMAGE_LENGTH] = {
+    name: "ImageLength",
+    format: "unsigned short",
+    compoNo: 1,
+    desc: "Image length",
+    converter: (args: ConverterArgs) => assertValueIsUnsignedShort(args.rawValue),
+    formatter: formatNumberWrapper,
+    displayName: "Image Length (px)",
+    group: TagGroup.Image,
+    propName: "imageLength"
 };
 TAG_NUMBER_INFO[EXIF_IMAGE_DESCRIPTION_TAG_NUMBER] = {
     name: "ImageDescription",
@@ -428,6 +453,19 @@ TAG_NUMBER_INFO[EXIF_F_NUMBER] = {
     compoNo: 1,
     desc: "The actual F-number(F-stop) of lens when the image was taken."
 };
+
+TAG_NUMBER_INFO[EXIF_IPTC_NAA] = {
+    name: "IPTC/NAA",
+    format: "undefined",
+    compoNo: null,
+    desc: "International Press Telecommunications Council & Newspaper Association of America Information Interchange Model data.",
+    converter: (args: ConverterArgs) => assertValueIsByteArray(args.rawArrValue),
+    formatter: formatByteArraySummary,
+    displayName: "IPTC/NAA IIM metadata",
+    group: TagGroup.Image,
+    propName: "iptcMetadata"
+};
+
 TAG_NUMBER_INFO[EXIF_EXPOSURE_PROGRAM] = {
     name: "ExposureProgram",
     format: "unsigned short",
