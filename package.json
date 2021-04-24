@@ -17,7 +17,7 @@
     "build:all": "npm run build & npm run build:osx & npm run build:win",
     "package": "npm run build",
     "clean:test-data": "rm -f ./test-data/DSC08303-Modified.JPG.exif-copy.bak",
-    "restore-testdata": "cp ./test-data/Copies/* ./test-data && npm run clean:test-data",
+    "restore-test-data": "cp ./test-data/Copies/* ./test-data && npm run clean:test-data",
     "test:analysis": "npm start -- -a ./test-data/DSC08303-Modified.JPG",
     "test:analysis-source": "npm start -- -a ./test-data/DSC08303-Original.JPG",
     "test:copy": "npm start -- ./test-data/DSC08303-Original.JPG ./test-data/DSC08303-Modified.JPG"
