@@ -129,13 +129,9 @@ export function addNewRangeToBlocks(
 ): UsageByteBlock[] {
     const points = blocksToPoints(blocks);
     const newPoints = addRangeMarkersToPoints(points, newBlockStartIdx, newBlockEndIdx);
-    // let startPoint: UsageByteBlockPoint | null = null;
     let newRangeBlockToAdd: UsageByteBlock | null = null;
     let newBlockToAdd: UsageByteBlock | null = null;
     
-    // let currentBlock: UsageByteBlock | null = null;
-    // let currentStartPoint: UsageByteBlockPoint | null = null;
-    // let currentEndPoint: UsageByteBlockPoint | null = null;
     const result: UsageByteBlock[] = [];
     let searchState = PointBlockSearchState.LookingForBlockStart;
     let foundRangeStart = false;

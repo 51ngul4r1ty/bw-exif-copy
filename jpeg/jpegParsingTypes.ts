@@ -13,6 +13,7 @@ export interface ExtractLogOptions {
     logExifTagFields?: boolean;
     logUnknownExifTagFields?: boolean;
     logStageInfo?: boolean;
+    tagEachIfdEntry?: boolean;
 }
 
 // TODO: Come up with a better name than `Component`

@@ -31,7 +31,8 @@ export function extract(
         scanImageDataWithStartOfScan: null,
         extraBlocks: [],
         fullExifMetaData: null,
-        trailingData: null
+        trailingData: null,
+        exifTableData: null
     };
     let defaultOpts: ExtractUserOptions = {
         // "undefined" means "Choose whether to transform colors based on the image’s color model."
@@ -78,9 +79,11 @@ export function extract(
             logOpts.logExifDataDecoded || false,
             logOpts.logExifBufferUsage || false,
             logOpts.logExifTagFields || false,
-            logOpts.logUnknownExifTagFields || false
+            logOpts.logUnknownExifTagFields || false,
+            logOpts.tagEachIfdEntry || false
         );
         if (exifDecoded.exifTableData) {
+            result.exifTableData = exifDecoded.exifTableData;
             const exifImageData = exifDecoded.exifTableData.standardFields.image;
             if (exifImageData?.xResolution && exifImageData?.yResolution && exifImageData?.resolutionUnit) {
                 const jfifResolutionMetaData = convertToJfifResolutionMetaData(

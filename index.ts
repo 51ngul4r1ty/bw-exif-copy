@@ -5,25 +5,36 @@ import { path, fs } from "./deps.ts";
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
 
 console.log("");
-console.log("Berryware Exif Copy v1.0");
+console.log("Berryware Exif Copy v1.1");
 console.log("========================");
 console.log("");
 
+function getOptionArgs(): string[] {
+    const optionArgs = Deno.args.filter(arg => arg.startsWith("-"));
+    return optionArgs;
+}
+
+function hasFlag(shortFlag: string, longFlag: string): boolean {
+    const optionArgs = getOptionArgs();
+    const matchingOptionArgs = optionArgs.filter(arg => arg === `--$longFlag}` || arg === `-${shortFlag}`);
+    return matchingOptionArgs.length > 0;
+};
+
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
-const optionArgs = Deno.args.filter(arg => arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
 if (argCount === 1) {
     const filePath = path.resolve(nonOptionArgs[0]);
-    const analyzeArgs = optionArgs.filter(arg => arg === "--analyze" || arg === "-a");
-    if (analyzeArgs.length > 0) {
+    const hasAnalyzeFlag = hasFlag("a", "analyze");
+    const hasUsageReportFlag = hasFlag("u", "usage");
+    if (hasAnalyzeFlag || hasUsageReportFlag) {
         const logOpts = {
-            logExifBufferUsage: false, logExifDataDecoded: true,
+            logExifBufferUsage: hasUsageReportFlag, logExifDataDecoded: true,
             logExifTagFields: false, logUnknownExifTagFields: true,
-            logStageInfo: false
+            logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag // usage report benefits from this info, but it may have perf implications
         }
-        const sourceFileData = await readFileContents("file", filePath, logOpts);
+        await readFileContents("file", filePath, logOpts);
     } else {
-        console.log("INFO: One arg passed at command line and no option --analyze or -a option provided.");
+        console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
 } else if (argCount === 2) {
     const sourceFilePath = path.resolve(nonOptionArgs[0]);
@@ -54,10 +65,14 @@ if (argCount === 1) {
         Deno.rename(outputFilePath, targetFilePath);
     }
 } else {
-    console.log("ERROR: Expected 2 arguments for source and target file names.");
+    console.log("Accepted command line args:");
+    console.log("  1) 2 arguments for source and target file names.");
+    console.log("  2) A single argument for file to analyze plus one option (a/analyze or u/usage).");
     console.log("");
-    console.log("For example, use `exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
+    console.log("For example,");
+    console.log("  1) use `bw-exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
+    console.log("  2) use `bw-exif-copy --analyze ./sourceFolder/file1.jpg`");
     console.log("");
-    console.log("NOTE: exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
+    console.log("NOTE: bw-exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
 }
 console.log("");

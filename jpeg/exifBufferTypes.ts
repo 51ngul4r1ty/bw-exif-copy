@@ -24,6 +24,9 @@ export class ExifBuffer {
     moveCursorToExifOffset(offset: number) {
         this.offsetCursor = (this.exifCursor || 0) + offset;
     }
+    getExifCursor() {
+        return this.exifCursor || 0;
+    }
     setExifCursor() {
         this.exifCursor = this.offsetCursor;
     }
@@ -31,6 +34,9 @@ export class ExifBuffer {
         this.startingOffset = this.offsetCursor;
         this.usageTracker.addUsageBlock(this.offsetCursor, this.offsetCursor + length - 1, true, tags);
         this.offsetCursor += length;
+    }
+    markRangeWithUsageData(trueStartingOffset: number, length: number, tags: string[]) {
+        this.usageTracker.addUsageBlock(trueStartingOffset, trueStartingOffset + length - 1, true, tags);
     }
     getDataForExifPart() {
         if (this.startingOffset === null) {

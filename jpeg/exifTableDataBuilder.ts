@@ -90,6 +90,7 @@ export function supplementExifTableData(
                 gps: {}
             },
             unknownFields: {},
+            fieldValueLocations: {}
         };
     } else {
         newExifTableData = exifTableData;
@@ -112,6 +113,11 @@ export function supplementExifTableData(
         }
         const tags = ['tag-value', tagName];
         const convertedValues = getConvertedValuesForDirectoryEntry(exifBuffer, directoryEntry, tagNumberInfo, byteOrder, tags, logExifTagFields);
+        newExifTableData.fieldValueLocations[directoryEntry.tagNumber] = {
+            offsetStart: convertedValues.offsetStart,
+            length: convertedValues.length,
+            containerLength: convertedValues.containerLength
+        };
         switch (directoryEntry.tagNumber) {
             case EXIF_IMAGE_DESCRIPTION_TAG_NUMBER: {
                 newExifTableData.standardFields.image!.imageDescription = assertValueIsString(convertedValues.value);

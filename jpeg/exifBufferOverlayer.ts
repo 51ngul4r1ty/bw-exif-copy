@@ -6,6 +6,7 @@ import { consoleLogExifBufferUsage } from "./exifParsingDebugger.ts";
 import { processExifHeader, processTiffHeader } from "./exifBufferDecoderProcessors.ts";
 import { errorLog } from "../misc/errorLog.ts";
 import { HtmlFileWriter } from "../presenter/htmlFileWriter.ts";
+import { cloneUint18Array } from "../misc/jsUtils.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
@@ -17,7 +18,6 @@ import { supplementExifTableData } from "./exifTableDataBuilder.ts";
 import { consoleLogExifTable } from "../presenter/exifTableLogger.ts";
 import {
     BaseDecodedPartData,
-    ExifDecoded,
     ExifDecodedPart,
     ExifDecodedPartType,
 } from "./exifBufferDecoderTypes.ts";
@@ -27,20 +27,28 @@ import {
     ImageFileDirectoryPartTypeData,
     processImageFileDirectory,
 } from "./exifIfdDirectoryProcessor.ts";
+import { ExifTableData } from "./exifFormatTypes.ts";
 
 export interface TiffHeaderPartTypeData extends BaseDecodedPartData {
     byteOrder: TiffByteOrder;
 }
 
-export function decodeExifBuffer(
+export interface OverlayTagItem {
+    tagNumber: number;
+    value: any;
+}
+
+export function overlayExifBuffer(
     exifBufferWithHeader: Uint8Array, logExifDataDecoded: boolean, logExifBufferUsage: boolean, logExifTagFields: boolean,
-    logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean
-): ExifDecoded {
+    logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean,
+    overlayTagItems: OverlayTagItem[]
+): Uint8Array {
     errorLog.throwErrorImmediately = false;
-    const exifDecodedResult: ExifDecoded = {
-        exifParts: [],
-        exifTableData: null,
-    };
+    let exifTableData: ExifTableData | null = null;
+    // const exifDecodedResult: ExifDecoded = {
+    //     exifParts: [],
+    //     exifTableData: null,
+    // };
 
     let exifBuffer = new ExifBuffer(exifBufferWithHeader);
     let byteOrder: TiffByteOrder;
@@ -49,11 +57,11 @@ export function decodeExifBuffer(
     {
         /* Process Exif Header */
         processExifHeader(exifBuffer);
-        exifDecodedResult.exifParts.push({
-            name: "EXIF Header Block",
-            type: ExifDecodedPartType.ExifHeader,
-            data: exifBuffer.getDataForExifPart(),
-        });
+        // exifDecodedResult.exifParts.push({
+        //     name: "EXIF Header Block",
+        //     type: ExifDecodedPartType.ExifHeader,
+        //     data: exifBuffer.getDataForExifPart(),
+        // });
     }
 
     exifBuffer.setExifCursor();
@@ -69,7 +77,7 @@ export function decodeExifBuffer(
                 byteOrder: tiffHeaderResult.byteOrder
             }
         };
-        exifDecodedResult.exifParts.push(tiffHeaderExifPart);
+        // exifDecodedResult.exifParts.push(tiffHeaderExifPart);
     }
 
     /* Process First IFD Record */
@@ -87,12 +95,12 @@ export function decodeExifBuffer(
                 ...ifdData
             }
         };
-        exifDecodedResult.exifParts.push(exifPart);
+        // exifDecodedResult.exifParts.push(exifPart);
     }
 
     {
-        exifDecodedResult.exifTableData = supplementExifTableData(
-            exifDecodedResult.exifTableData,
+        exifTableData = supplementExifTableData(
+            exifTableData,
             exifBuffer,
             byteOrder,
             ifdData,
@@ -101,7 +109,7 @@ export function decodeExifBuffer(
         );
     }
 
-    const exifOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.exifOffset;
+    const exifOffsetRawValue = exifTableData.standardFields.image?.exifOffset;
     if (exifOffsetRawValue) {
         let extendedExifIfdResult: IfdResult; 
 
@@ -131,13 +139,13 @@ export function decodeExifBuffer(
                     ...ifdData
                 }
             };
-            exifDecodedResult.exifParts.push(exifPart);
+            // exifDecodedResult.exifParts.push(exifPart);
         }
     }
 
     {
-        exifDecodedResult.exifTableData = supplementExifTableData(
-            exifDecodedResult.exifTableData,
+        exifTableData = supplementExifTableData(
+            exifTableData,
             exifBuffer,
             byteOrder,
             ifdData,
@@ -146,7 +154,7 @@ export function decodeExifBuffer(
         );
     }
 
-    const gpsOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.gpsInfo;
+    const gpsOffsetRawValue = exifTableData.standardFields.image?.gpsInfo;
     if (gpsOffsetRawValue) {
         const gpsOffset = gpsOffsetRawValue || 0;
         // const gpsOffset = getRelativeExifOffset("image.gpsInfo", gpsOffsetRawValue, exifOffsetAdjust);
@@ -174,13 +182,13 @@ export function decodeExifBuffer(
                 ...ifdData
             },
         };
-        exifDecodedResult.exifParts.push(exifPart);
+        // exifDecodedResult.exifParts.push(exifPart);
 
     }
 
     {
-        exifDecodedResult.exifTableData = supplementExifTableData(
-            exifDecodedResult.exifTableData,
+        exifTableData = supplementExifTableData(
+            exifTableData,
             exifBuffer,
             byteOrder,
             ifdData,
@@ -192,10 +200,10 @@ export function decodeExifBuffer(
     if (logExifDataDecoded) {
         console.log('');
         console.log('');
-        console.log('EXIF DATA DECODED');
-        console.log('-----------------');
+        console.log('EXIF DATA DECODED (WITH OVERLAYS)');
+        console.log('---------------------------------');
         console.log('');
-        consoleLogExifTable(exifDecodedResult.exifTableData);
+        consoleLogExifTable(exifTableData);
     }
 
     if (logExifBufferUsage) {
@@ -252,5 +260,43 @@ export function decodeExifBuffer(
         errorLog.consoleLogErrors();
     }
 
-    return exifDecodedResult;
+    if (!exifTableData) {
+        throw new Error("Unexpected condition: EXIF TABLE DATA is null");
+    } else {
+        const result = cloneUint18Array(exifBufferWithHeader);
+        let replacedCount = 0;
+        overlayTagItems.forEach(overlayTagItem => {
+            const fieldValueLocation = exifTableData!.fieldValueLocations[overlayTagItem.tagNumber];
+            if (fieldValueLocation) {
+                if (fieldValueLocation.containerLength === null) {
+                    throw new Error("Unable to overlay unbound field value container");
+                }
+                if (fieldValueLocation.containerLength > 4) {
+                    throw new Error(`Unable to overlay unbound field value container (length is >4: ${fieldValueLocation.containerLength})`);
+                }
+                const offsetStart = fieldValueLocation.offsetStart;
+                if (!offsetStart && offsetStart !== 0) {
+                    throw new Error("fieldValueLocation.offsetStart is null or undefined");
+                } else {
+                    // clear out old container
+                    for (let i = 0; i < fieldValueLocation.containerLength; i++) {
+                        result[offsetStart + i] = 0;
+                    }
+                    let val = overlayTagItem.value;
+                    let idx = 0;
+                    while (val > 0) {
+                        result[offsetStart + idx] = val & 255;
+                        val = val >> 8;
+                        idx++;
+                    }
+                    replacedCount++;
+                    console.log(`EXIF tag number overwritten: ${overlayTagItem.tagNumber} with value ${overlayTagItem.value}`);
+                }
+            }
+        });
+        if (replacedCount < overlayTagItems.length) {
+            throw new Error(`Unable to replace all EXIF attributes: replaced ${replacedCount} out of ${overlayTagItems.length} items.`);
+        }
+        return result;
+    }
 };

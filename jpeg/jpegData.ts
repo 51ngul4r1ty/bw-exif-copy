@@ -1,3 +1,4 @@
+import { ExifTableData } from "./exifFormatTypes.ts";
 import { FileMarkerData } from "./jpegParsingTypes.ts";
 
 export interface JpegData {
@@ -14,4 +15,5 @@ export interface JpegData {
         eoiMarkerBefore: boolean
     } | null,
     fullExifMetaData: Uint8Array | null;
+    exifTableData: ExifTableData | null;
 }

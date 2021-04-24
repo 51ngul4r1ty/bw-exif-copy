@@ -1,8 +1,12 @@
 // utils
+import { overlayMetaDataFields } from "./exifOverwriter/exifOverwriter.ts";
+import { ExifOrientation, ExifTableData } from "./jpeg/exifFormatTypes.ts";
+import { orientationToNumber } from "./jpeg/exifTagValueConverters.ts";
 import { extract } from "./jpeg/extractor.ts";
 
 // interfaces/types
 import { ExtractLogOptions, FileMarkerData } from "./jpeg/jpegParsingTypes.ts";
+import { EXIF_IMAGE_ORIENTATION_TAG_NUMBER } from "./jpeg/tagNumbers.ts";
 
 
 export interface FileImageData {
@@ -27,6 +31,7 @@ export interface FileData {
     fullExifMetaData: Uint8Array | null;
     extraBlocks: FileMarkerData[];
     trailingData: TrailingFileData | null;
+    exifTableData: ExifTableData | null;
 }
 
 export async function readFileContents(descrip: string, filePath: string, logOpts: ExtractLogOptions = {}): Promise<FileData> {
@@ -44,7 +49,8 @@ export async function readFileContents(descrip: string, filePath: string, logOpt
         },
         extraBlocks: jpegDecoded.extraBlocks,
         trailingData: null,
-        fullExifMetaData: jpegDecoded.fullExifMetaData
+        fullExifMetaData: jpegDecoded.fullExifMetaData,
+        exifTableData: jpegDecoded.exifTableData
     }
     if (jpegDecoded.trailingData?.data) {
         result.trailingData = {
@@ -114,18 +120,18 @@ export function buildFromExtraBlock(extraBlock: FileMarkerData): number[] {
     return result;
 };
 
-export function convertFileDataToByteArray(fileData: FileData, removeExif: boolean, removePostEoiData: boolean, stopStage: number | null = null, fullExifMetaData?: Uint8Array | null, logBlockStageInfo?: boolean | null): Uint8Array {
+export function convertFileDataToByteArray(fileData: FileData, removeExif: boolean, removePostEoiData: boolean, stopStage: number | null = null, exifMetaDataToOverwriteWith?: Uint8Array | null, logBlockStageInfo?: boolean | null): Uint8Array {
     let arr: number[] = [];
     // SOI
     arr = arr.concat([0xFF, 0xD8]);
 
-    if (removeExif || fullExifMetaData === null) {
+    if (removeExif || exifMetaDataToOverwriteWith === null) {
         // JFIF-APP0
         arr = arr.concat([0xFF, 0xE0]);
         arr = appendBlock(arr, buildJfifApp0Block(fileData));
-    } else if (fullExifMetaData) {
+    } else if (exifMetaDataToOverwriteWith) {
         arr = arr.concat([0xFF, 0xE1]);
-        arr = appendBlock(arr, Array.from(fullExifMetaData));
+        arr = appendBlock(arr, Array.from(exifMetaDataToOverwriteWith));
     } else {
         arr = arr.concat([0xFF, 0xE1]);
         arr = appendBlock(arr, buildExifApp1Block(fileData));
@@ -216,7 +222,11 @@ export function convertFileDataToByteArray(fileData: FileData, removeExif: boole
     return result;
 }
 
-export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, fullExifMetaData?: Uint8Array | null, logStageInfo?: boolean | null) {
-    const byteArray = convertFileDataToByteArray(fileData, !!writeOptions.removeExif, !!writeOptions.removePostEoiData, null, fullExifMetaData, logStageInfo);
+export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null) {
+    const orientationValue = orientationToNumber(fileData.exifTableData?.standardFields.image?.orientation || ExifOrientation.Undefined);
+    const tagEachIfdEntry = false; // at this time this isn't relevant unless you're doing analysis of metadata
+    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, [{ tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue }], tagEachIfdEntry);
+    // const mergedMetaData = exifMetaDataToOverwriteWith;
+    const byteArray = convertFileDataToByteArray(fileData, !!writeOptions.removeExif, !!writeOptions.removePostEoiData, null, mergedMetaData, logStageInfo);
     await Deno.writeFile(filePath, byteArray);
 }

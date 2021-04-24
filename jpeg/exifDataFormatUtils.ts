@@ -92,6 +92,9 @@ export function getUnsignedByte1EltArrayItemFromDataValue(dataValue: number): nu
     return byteVal1;
 }
 
+// TODO: I think this is named wrong- it isn't "From Data Value" because it is using the
+//       data values AS AN OFFSET!!  Compare to other FromDataValue function names.  There
+//       may be similar mistakes throughout this file for the function names.
 export function getUnsignedRationalFromDataValue(exifBuffer: ExifBuffer, offset: number, length: number, byteOrder: TiffByteOrder): ExifRational[] {
     const actualOffset = offset;
     let idx = actualOffset;
@@ -113,6 +116,9 @@ export function getUnsignedRationalFromDataValue(exifBuffer: ExifBuffer, offset:
     return result;
 }
 
+// TODO: I think this is named wrong- it isn't "From Data Value" because it is using the
+//       data values AS AN OFFSET!!  Compare to other FromDataValue function names.  There
+//       may be similar mistakes throughout this file for the function names.
 export function getSignedRationalFromDataValue(exifBuffer: ExifBuffer, offset: number, length: number, byteOrder: TiffByteOrder): ExifRational[] {
     const rationalResult = getUnsignedRationalFromDataValue(exifBuffer, offset, length, byteOrder);
     return rationalResult.map(item => ({ ...item, signed: true}));

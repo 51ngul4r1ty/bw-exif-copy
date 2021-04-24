@@ -55,7 +55,6 @@ export function parseAppComSection(
             };
         }
     }
-    // TODO APP1 - Exif
     if (fileMarker === 0xffe1) {
         if (
             appData[0] === 0x45 &&

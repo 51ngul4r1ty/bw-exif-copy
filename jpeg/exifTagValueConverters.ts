@@ -216,6 +216,24 @@ export function numberToOrientation(val: number): ExifOrientation {
     }
 }
 
+export function orientationToNumber(val: ExifOrientation | undefined): number {
+    switch (val) {
+        case ExifOrientation.UpperLeft:
+            return ExifOrientation.UpperLeft;
+        case ExifOrientation.LowerRight:
+            return ExifOrientation.LowerRight;
+        case ExifOrientation.UpperRight:
+            return ExifOrientation.UpperRight;
+        case ExifOrientation.LowerLeft:
+            return ExifOrientation.LowerLeft;
+        case ExifOrientation.Undefined:
+            return ExifOrientation.Undefined;
+        default: {
+            throw new Error(`Unknown orientation value: ${val}`);
+        }
+    }
+}
+
 export function numberToResUnit(val: number): ExifResolutionUnit {
     switch (val) {
         case ExifResolutionUnit.Centimeter:
@@ -279,7 +297,7 @@ export function numberToCbCrPositioning(val: number | undefined): ExifYCbCrPosit
         case ExifYCbCrPositioning.DatumPoint:
             return ExifYCbCrPositioning.DatumPoint;
         default: {
-            throw new Error(`Unknown orientation value: ${val}`);
+            throw new Error(`Unknown Y CB CR Positioning value: ${val}`);
         }
     }
 }
