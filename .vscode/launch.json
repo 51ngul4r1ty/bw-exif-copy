@@ -107,7 +107,7 @@
                 "--allow-all",
                 "--unstable",
                 "--filter",
-                "alternate scenario test"
+                "handle fully contained blocks"
             ],
             "outputCapture": "std",
             "attachSimplePort": 9229

@@ -26,7 +26,7 @@ export const TAG_INIT = "init";
 export interface UsageBlocksInRangeResult {
     blocks: UsageByteBlock[];
     startIndex: number | null;
-    length: number | null;
+    // length: number | null;
 }
 
 function getBlockEndIndex(block: UsageByteBlock | null): number {
@@ -61,7 +61,7 @@ export class ByteUsageTracker {
 
     addUsageBlock(startIdx: number, endIdx: number, used: boolean, tags: string[]) {
         const oldBlocksResult = this.getUsageBlocksInRange(startIdx, endIdx);
-        const { blocks: oldBlocks, startIndex: oldStartIndex, length: oldLength } = oldBlocksResult;
+        const { blocks: oldBlocks, startIndex: oldStartIndex /*, length: oldLength */ } = oldBlocksResult;
         if (oldBlocks.length === 0) {
             this.usageBlocks.push({
                 startIdx,
@@ -72,7 +72,7 @@ export class ByteUsageTracker {
         }
         else {
             const newBlocks = addNewRangeToBlocks(oldBlocks, startIdx, endIdx, used, tags);
-            this.replaceBlocks(this.usageBlocks, oldStartIndex, oldLength, newBlocks);
+            this.replaceBlocks(this.usageBlocks, oldStartIndex, oldBlocks.length, newBlocks);
         }
     }
 
@@ -97,54 +97,13 @@ export class ByteUsageTracker {
         }
         const result: UsageBlocksInRangeResult = {
             blocks: [] as UsageByteBlock[],
-            startIndex: null,
-            length: null
+            startIndex: null //,
+//            length: null
         };
         let blocksInRange = false;
         let finishedBlocks = false;
         let idx: number = 0;
         let lastBlock: UsageByteBlock | null = null;
-        // BLOCKS:        #1        #2                #3
-
-        // case 1:
-        //              [26...31][32....41]  [47.................66]
-        // [13...18]
-        // RESULT:                                                           #X #1 #2 #3           (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
-
-        // case 2:
-        //              [26...31][32....41]  [47.................66]
-        // [13.............28]
-        // RESULT:                                                           #X #X1.1 #1.2 #2 #3   (blocks in range = [#1])
-
-        // case 3:
-        //              [26...31][32....41]  [47.................66]
-        // [13..............................................61]
-        // RESULT:                                                           #X #X1 #X2 #X3.1 #3.2 (blocks in range = [#1, #2, #3])
-
-        // case 4:
-        //              [26...31][32....41]  [47.................66]
-        //                                                            [72....78]
-        // RESULT:                                                           #1 #2 #3 #X (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
-
-        // case 5:
-        //              [26...31][32....41]  [47.................66]
-        //                                                  [62........72]
-        // RESULT:                                                           #1 #2 #3X.1 #X.2 (blocks in range = [])
-
-        // case 6:
-        //              [26...31][32....41]  [47.................66]
-        //                  [30........................................72]
-        // RESULT:                                                           #1.1 #1.2X #2X #3.1X #3.2X (blocks in range = [#1, #2, #3])
-
-        // case 7:
-        //              [26...31][32....41]  [47.................66]
-        //                  [30........................................72]
-        // RESULT:                                                           #1.1 #1.2X #2X #3.1X #3.2X (blocks in range = [#1, #2, #3])
-
-        // case 8:
-        //              [26...31][32....41]                   [64..68]
-        //                                    [48.......57]
-        // RESULT:                                                           #1 #2 #X #3 (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
         this.usageBlocks.forEach(block => {
             if (!block.endIdx) {
                 throw new Error("Unable to search for usage blocks when block.endIdx is not set for one of the items in the array.");
@@ -171,21 +130,21 @@ export class ByteUsageTracker {
                 result.blocks.push(block);
                 if (result.startIndex === null) {
                     result.startIndex = idx;
-                    result.length = 1;
+                    // result.length = 1;
                 }
-                else {
-                    result.length!++;
-                }
+                // else {
+                //     result.length!++;
+                // }
             } else if (endOfRangeInThisBlock) {
                 // end index falls in range of this block
                 result.blocks.push(block);
                 if (result.startIndex === null) {
                     result.startIndex = idx;
-                    result.length = 1;
+                    // result.length = 1;
                 }
-                else {
-                    result.length!++;
-                }
+                // else {
+                //     result.length!++;
+                // }
             } else if (blocksInRange) {
                 if (finishedBlocks) {
                     throw new Error("Unexpected condition: finished processing blocks in getUsageBlocksInRange but found another set of blocks!");
@@ -204,10 +163,10 @@ export class ByteUsageTracker {
             // doesn't overlap any existing blocks
             if (this.usageBlocks.length === 0) {
                 result.startIndex = 0;
-                result.length = 0;
+                // result.length = 0;
             } else if (lastBlock && startIdx > getBlockEndIndex(lastBlock)) {
                 result.startIndex = idx;
-                result.length = 0;
+                // result.length = 0;
             }
         }
         return result;
