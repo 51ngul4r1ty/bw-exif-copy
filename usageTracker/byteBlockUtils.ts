@@ -117,6 +117,197 @@ export function mergeUsed(oldFlag: boolean, newFlag: boolean, ignorePreviousUsed
     return ignorePreviousUsedFlag ? newFlag : oldFlag || newFlag;
 }
 
+export interface BlockRangeAddingState {
+    foundRangeStart: boolean;
+    foundRangeEnd: boolean;
+    searchState: PointBlockSearchState;
+    newRangeBlockToAdd: UsageByteBlock | null;
+    newBlockToAdd: UsageByteBlock | null;
+    currentExistingBlock: UsageByteBlock | null;
+    newBlockTags: Set<string>;
+    result: UsageByteBlock[];
+}
+
+export function checkForBlockStart(state: BlockRangeAddingState, newBlockUsedFlag: boolean, point: UsageByteBlockPoint) {
+    if (point.markerPointType === UsageByteBlockPointType.Start) {
+        if (state.foundRangeStart) {
+            throw new Error(`Unexpected condition: found a second range start point at ${point.idx}... there should only be one!`);
+        }
+        state.foundRangeStart = true;
+    }
+    if (point.markerPointType === UsageByteBlockPointType.End) {
+        if (state.foundRangeEnd) {
+            throw new Error(`Unexpected condition: found a second range end point at ${point.idx}... there should only be one!`);
+        }
+        if (!state.foundRangeStart) {
+            throw new Error(`Unexpected condition: while looking for block start, found a range end point at ${point.idx} without first finding a range start point!`);
+        }
+        state.foundRangeEnd = true;
+    }
+    if (point.block) {
+        if (point.blockPointType !== UsageByteBlockPointType.Start) {
+            throw new Error(`Unexpected condition: looking for block start, block point type=${point.blockPointType} at ${point.idx}`);
+        }
+        state.searchState = PointBlockSearchState.LookingForBlockEnd;
+        if (state.newRangeBlockToAdd) {
+            if (!isRangeBlockBeingAdded(state)) {
+                throw new Error(`Unexpected condition: new range block will be split because a block start point was found, but isRangeBlockBeingAdded is false`);
+            }
+            // we've encountered an existing block starting point so we're cutting off the new range block short
+            state.newRangeBlockToAdd.endIdx = point.idx - 1;
+            state.result.push(state.newRangeBlockToAdd);
+            state.newRangeBlockToAdd = null;
+        }
+        if (state.newBlockToAdd) {
+            throw new Error(`Unexpected condition: newBlockToAdd was set when encountering a block start point`);
+        }
+        state.currentExistingBlock = point.block;
+        state.newBlockToAdd = { ...state.currentExistingBlock };
+    }
+    else if (point.markerPointType === UsageByteBlockPointType.Start) {
+        state.newRangeBlockToAdd = {
+            startIdx: point.idx,
+            endIdx: null,
+            used: newBlockUsedFlag,
+            tags: state.newBlockTags
+        }
+    }
+    else if (point.markerPointType === UsageByteBlockPointType.End) {
+        //    v-------------- here (at range end)
+        // ......... [block]
+        // |--|
+        if (!state.newRangeBlockToAdd) {
+            throw new Error(`Unexpected condition: found a range end point at ${point.idx} but there's no block to add!`);
+        }
+        if (state.currentExistingBlock) {
+            throw new Error(`Unexpected condition: found a range end point at ${point.idx} outside of a range, but currentExistingBlock is not null!`);
+        }
+        state.newRangeBlockToAdd.endIdx = point.idx;
+        state.result.push(state.newRangeBlockToAdd);
+        state.newRangeBlockToAdd = null;
+    }
+    else {
+        throw new Error("Unexpected condition: looking for block start but didn't find a block or a range start/end!");
+    }
+}
+
+function checkForBlockEnd(state: BlockRangeAddingState, newBlockUsedFlag: boolean, overrideBlockUsedFlag: boolean, point: UsageByteBlockPoint) {
+    if (point.markerPointType === UsageByteBlockPointType.Start) {
+        if (state.foundRangeStart) {
+            throw new Error(`Unexpected condition: found a second range start point at ${point.idx}... there should only be one!`);
+        }
+        state.foundRangeStart = true;
+    }
+    if (point.markerPointType === UsageByteBlockPointType.End) {
+        // looking for end of block, found end of range
+        if (state.foundRangeEnd) {
+            throw new Error(`Unexpected condition: found a second range end point at ${point.idx}... there should only be one!`);
+        }
+        if (!state.foundRangeStart) {
+            throw new Error(`Unexpected condition: while looking for block end, found a range end point at ${point.idx} without first finding a range start point!`);
+        }
+        state.foundRangeEnd = true;
+    }
+    if (point.block) {
+        if (point.blockPointType !== UsageByteBlockPointType.End) {
+            throw new Error(`Unexpected condition: looking for block end, block point type=${point.blockPointType} at ${point.idx}`);
+        }
+        state.searchState = PointBlockSearchState.LookingForBlockStart;
+        if (state.newBlockToAdd) {
+            if (point.markerPointType === UsageByteBlockPointType.End) {
+                state.foundRangeEnd = true;
+                state.newBlockToAdd.used = mergeUsed(state.newBlockToAdd.used, newBlockUsedFlag, overrideBlockUsedFlag);
+                state.newBlockToAdd.tags = mergeTags(state.newBlockToAdd.tags, state.newBlockTags);
+            }
+            state.newBlockToAdd.endIdx = point.idx;
+            state.result.push(state.newBlockToAdd);
+            state.newBlockToAdd = null;
+        }
+        else if (state.newRangeBlockToAdd) {
+            if (point.markerPointType === UsageByteBlockPointType.End) {
+                state.foundRangeEnd = true;
+                state.newRangeBlockToAdd.used = mergeUsed(state.newRangeBlockToAdd.used, newBlockUsedFlag, overrideBlockUsedFlag);
+                state.newRangeBlockToAdd.tags = mergeTags(state.newRangeBlockToAdd.tags, point.block.tags);
+            }
+            state.newRangeBlockToAdd.endIdx = point.idx;
+            state.result.push(state.newRangeBlockToAdd);
+            state.newRangeBlockToAdd = null;
+        }
+        else {
+            throw new Error(`Unexpected condition: found a block end point at ${point.idx} but there's no block to add!`);
+        }
+        state.currentExistingBlock = null;
+        state.searchState = PointBlockSearchState.LookingForBlockStart;
+        if (isRangeBlockBeingAdded(state)) {
+            // carry on where we left off
+            state.newRangeBlockToAdd = {
+                startIdx: point.idx + 1,
+                endIdx: null,
+                used: newBlockUsedFlag,
+                tags: state.newBlockTags
+            }
+        }
+    }
+    else if (point.markerPointType === UsageByteBlockPointType.Start) {
+        if (!state.newBlockToAdd) {
+            throw new Error(`Unexpected condition: found a block start, looking for the block end, found range start at ${point.idx} but blockToAdd has not been assigned yet!`);
+        }
+        if (!state.currentExistingBlock) {
+            throw new Error(`Unexpected condition: found a block start, looking for the block end, found range start at ${point.idx} but state.currentExistingBlock is null!`);
+        }
+        // this block is going to be split, so merge newBlockTagList
+        state.newBlockToAdd.endIdx = point.idx - 1;
+        state.result.push(state.newBlockToAdd);
+        state.newBlockToAdd = null;
+        state.newRangeBlockToAdd = {
+            startIdx: point.idx,
+            endIdx: null,
+            used: mergeUsed(state.currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag),
+            tags: mergeTags(state.currentExistingBlock.tags, state.newBlockTags)
+        };
+    }
+    else if (point.markerPointType === UsageByteBlockPointType.End) {
+        // looking for end of block, found end of range
+        if (!state.currentExistingBlock) {
+            throw new Error(`Unexpected condition: found a block start, looking for the block end, found range end at ${point.idx} but state.currentExistingBlock is null!`);
+        }
+        //          v-------------- here (at range end)
+        // ????????block]                                 (block could've started before or after range start)
+        //       |--|
+        if (state.newBlockToAdd) {
+            // started the block after the range
+            state.newBlockToAdd.endIdx = point.idx;
+            state.newBlockToAdd.used = mergeUsed(state.currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag);
+            state.newBlockToAdd.tags = mergeTags(state.currentExistingBlock.tags, state.newBlockTags);
+            state.result.push(state.newBlockToAdd);
+        }
+        else if (state.newRangeBlockToAdd) {
+            // started the range after the block
+            state.newRangeBlockToAdd.endIdx = point.idx;
+            state.newRangeBlockToAdd.used = mergeUsed(state.currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag);
+            state.newRangeBlockToAdd.tags = mergeTags(state.currentExistingBlock.tags, state.newBlockTags);
+            state.result.push(state.newRangeBlockToAdd);
+            state.newRangeBlockToAdd = null;
+        }
+        else {
+            throw new Error(`Unexpected condition: found a range end point at ${point.idx} but there's no block to add!`);
+        }
+        state.newBlockToAdd = {
+            startIdx: point.idx + 1,
+            endIdx: state.currentExistingBlock.endIdx,
+            used: state.currentExistingBlock.used,
+            tags: state.currentExistingBlock.tags
+        };
+    }
+    else {
+        throw new Error("Unexpected condition: looking for block end but didn't find a block end or a range start/end!");
+    }
+}
+
+function isRangeBlockBeingAdded(state: BlockRangeAddingState) {
+    return state.foundRangeStart && !state.foundRangeEnd;
+}
+
 /**
  * Adds a new usage range.
  * @param overrideBlockUsedFlag If provided and set to true and old "used" flag is true, but new "used" flag is false, it will set "used" to false.
@@ -127,195 +318,26 @@ export function addNewRangeToBlocks(
     newBlockUsedFlag: boolean, newBlockTagList: string[],
     overrideBlockUsedFlag: boolean = false
 ): UsageByteBlock[] {
+    const state: BlockRangeAddingState = {
+        foundRangeStart: false,
+        foundRangeEnd: false,
+        searchState: PointBlockSearchState.LookingForBlockStart,
+        newRangeBlockToAdd: null,
+        newBlockToAdd: null,
+        currentExistingBlock: null,
+        newBlockTags: tagListToSet(newBlockTagList),
+        result: []
+    };
     const points = blocksToPoints(blocks);
     const newPoints = addRangeMarkersToPoints(points, newBlockStartIdx, newBlockEndIdx);
-    let newRangeBlockToAdd: UsageByteBlock | null = null;
-    let newBlockToAdd: UsageByteBlock | null = null;
     
-    const result: UsageByteBlock[] = [];
-    let searchState = PointBlockSearchState.LookingForBlockStart;
-    let foundRangeStart = false;
-    let foundRangeEnd = false;
-    let newBlockTags = tagListToSet(newBlockTagList);
-    let currentExistingBlock: UsageByteBlock | null = null;
-    function isRangeBlockBeingAdded() {
-        return foundRangeStart && !foundRangeEnd;
-    }
     newPoints.forEach(point => {
-        if (searchState === PointBlockSearchState.LookingForBlockStart) {
-            if (point.markerPointType === UsageByteBlockPointType.Start) {
-                if (foundRangeStart) {
-                    throw new Error(`Unexpected condition: found a second range start point at ${point.idx}... there should only be one!`);
-                }
-                foundRangeStart = true;
-            }
-            if (point.markerPointType === UsageByteBlockPointType.End) {
-                if (foundRangeEnd) {
-                    throw new Error(`Unexpected condition: found a second range end point at ${point.idx}... there should only be one!`);
-                }
-                if (!foundRangeStart) {
-                    throw new Error(`Unexpected condition: while looking for block start, found a range end point at ${point.idx} without first finding a range start point!`);
-                }
-                foundRangeEnd = true;
-            }
-            if (point.block) {
-                if (point.blockPointType !== UsageByteBlockPointType.Start) {
-                    throw new Error(`Unexpected condition: looking for block start, block point type=${point.blockPointType} at ${point.idx}`);
-                }
-                searchState = PointBlockSearchState.LookingForBlockEnd;
-                if (newRangeBlockToAdd) {
-                    if (!isRangeBlockBeingAdded()) {
-                        throw new Error(`Unexpected condition: new range block will be split because a block start point was found, but isRangeBlockBeingAdded is false`);
-                    }
-                    // we've encountered an existing block starting point so we're cutting off the new range block short
-                    newRangeBlockToAdd.endIdx = point.idx - 1;
-                    result.push(newRangeBlockToAdd);
-                    newRangeBlockToAdd = null;
-                }
-                if (newBlockToAdd) {
-                    throw new Error(`Unexpected condition: newBlockToAdd was set when encountering a block start point`);
-                }
-                currentExistingBlock = point.block;
-                newBlockToAdd = { ... currentExistingBlock };
-            }
-            else if (point.markerPointType === UsageByteBlockPointType.Start) {
-                newRangeBlockToAdd = {
-                    startIdx: point.idx,
-                    endIdx: null,
-                    used: newBlockUsedFlag,
-                    tags: newBlockTags
-                }
-            }
-            else if (point.markerPointType === UsageByteBlockPointType.End) {
-                //    v-------------- here (at range end)
-                // ......... [block]
-                // |--|
-                if (!newRangeBlockToAdd) {
-                    throw new Error(`Unexpected condition: found a range end point at ${point.idx} but there's no block to add!`);
-                }
-                if (currentExistingBlock) {
-                    throw new Error(`Unexpected condition: found a range end point at ${point.idx} outside of a range, but currentExistingBlock is not null!`);
-                }
-                newRangeBlockToAdd.endIdx = point.idx;
-                result.push(newRangeBlockToAdd);
-                newRangeBlockToAdd = null;
-            }
-            else {
-                throw new Error("Unexpected condition: looking for block start but didn't find a block or a range start/end!");
-            }
+        if (state.searchState === PointBlockSearchState.LookingForBlockStart) {
+            checkForBlockStart(state, newBlockUsedFlag, point);
         }
-        else if (searchState === PointBlockSearchState.LookingForBlockEnd) {
-            if (point.markerPointType === UsageByteBlockPointType.Start) {
-                if (foundRangeStart) {
-                    throw new Error(`Unexpected condition: found a second range start point at ${point.idx}... there should only be one!`);
-                }
-                foundRangeStart = true;
-            }
-            if (point.markerPointType === UsageByteBlockPointType.End) {
-                // looking for end of block, found end of range
-                if (foundRangeEnd) {
-                    throw new Error(`Unexpected condition: found a second range end point at ${point.idx}... there should only be one!`);
-                }
-                if (!foundRangeStart) {
-                    throw new Error(`Unexpected condition: while looking for block end, found a range end point at ${point.idx} without first finding a range start point!`);
-                }
-                foundRangeEnd = true;
-            }
-            if (point.block) {
-                if (point.blockPointType !== UsageByteBlockPointType.End) {
-                    throw new Error(`Unexpected condition: looking for block end, block point type=${point.blockPointType} at ${point.idx}`);
-                }
-                searchState = PointBlockSearchState.LookingForBlockStart;
-                if (newBlockToAdd) {
-                    if (point.markerPointType === UsageByteBlockPointType.End) {
-                        foundRangeEnd = true;
-                        newBlockToAdd.used = mergeUsed(newBlockToAdd.used, newBlockUsedFlag, overrideBlockUsedFlag);
-                        newBlockToAdd.tags = mergeTags(newBlockToAdd.tags, newBlockTags);
-                    }
-                    newBlockToAdd.endIdx = point.idx;
-                    result.push(newBlockToAdd);
-                    newBlockToAdd = null;
-                }
-                else if (newRangeBlockToAdd) {
-                    if (point.markerPointType === UsageByteBlockPointType.End) {
-                        foundRangeEnd = true;
-                        newRangeBlockToAdd.used = mergeUsed(newRangeBlockToAdd.used, newBlockUsedFlag, overrideBlockUsedFlag);
-                        newRangeBlockToAdd.tags = mergeTags(newRangeBlockToAdd.tags, point.block.tags);
-                    }
-                    newRangeBlockToAdd.endIdx = point.idx;
-                    result.push(newRangeBlockToAdd);
-                    newRangeBlockToAdd = null;
-                }
-                else {
-                    throw new Error(`Unexpected condition: found a block end point at ${point.idx} but there's no block to add!`);
-                }
-                currentExistingBlock = null;
-                searchState = PointBlockSearchState.LookingForBlockStart;
-                if (isRangeBlockBeingAdded()) {
-                    // carry on where we left off
-                    newRangeBlockToAdd = {
-                        startIdx: point.idx + 1,
-                        endIdx: null,
-                        used: newBlockUsedFlag,
-                        tags: newBlockTags
-                    }
-                }
-            }
-            else if (point.markerPointType === UsageByteBlockPointType.Start) {
-                if (!newBlockToAdd) {
-                    throw new Error(`Unexpected condition: found a block start, looking for the block end, found range start at ${point.idx} but blockToAdd has not been assigned yet!`);
-                }
-                if (!currentExistingBlock) {
-                    throw new Error(`Unexpected condition: found a block start, looking for the block end, found range start at ${point.idx} but currentExistingBlock is null!`);
-                }
-                // this block is going to be split, so merge newBlockTagList
-                newBlockToAdd.endIdx = point.idx - 1;
-                result.push(newBlockToAdd);
-                newBlockToAdd = null;
-                newRangeBlockToAdd = {
-                    startIdx: point.idx,
-                    endIdx: null,
-                    used: mergeUsed(currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag),
-                    tags: mergeTags(currentExistingBlock.tags, newBlockTags)
-                };
-            }
-            else if (point.markerPointType === UsageByteBlockPointType.End) {
-                // looking for end of block, found end of range
-                if (!currentExistingBlock) {
-                    throw new Error(`Unexpected condition: found a block start, looking for the block end, found range end at ${point.idx} but currentExistingBlock is null!`);
-                }
-                //          v-------------- here (at range end)
-                // ????????block]                                 (block could've started before or after range start)
-                //       |--|
-                if (newBlockToAdd) {
-                    // started the block after the range
-                    newBlockToAdd.endIdx = point.idx;
-                    newBlockToAdd.used = mergeUsed(currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag);
-                    newBlockToAdd.tags = mergeTags(currentExistingBlock.tags, newBlockTags);
-                    result.push(newBlockToAdd);
-                }
-                else if (newRangeBlockToAdd) {
-                    // started the range after the block
-                    newRangeBlockToAdd.endIdx = point.idx;
-                    newRangeBlockToAdd.used = mergeUsed(currentExistingBlock.used, newBlockUsedFlag, overrideBlockUsedFlag);
-                    newRangeBlockToAdd.tags = mergeTags(currentExistingBlock.tags, newBlockTags);
-                    result.push(newRangeBlockToAdd);
-                    newRangeBlockToAdd = null;
-                }
-                else {
-                    throw new Error(`Unexpected condition: found a range end point at ${point.idx} but there's no block to add!`);
-                }
-                newBlockToAdd = {
-                    startIdx: point.idx + 1,
-                    endIdx: currentExistingBlock.endIdx,
-                    used: currentExistingBlock.used,
-                    tags: currentExistingBlock.tags
-                };
-            }
-            else {
-                throw new Error("Unexpected condition: looking for block end but didn't find a block end or a range start/end!");
-            }
+        else if (state.searchState === PointBlockSearchState.LookingForBlockEnd) {
+            checkForBlockEnd(state, newBlockUsedFlag, overrideBlockUsedFlag, point);
         }
     });
-    return result;
+    return state.result;
 };
