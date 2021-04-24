@@ -29,6 +29,10 @@ export interface UsageBlocksInRangeResult {
     length: number | null;
 }
 
+function getBlockEndIndex(block: UsageByteBlock | null): number {
+    return block?.endIdx || -1;
+}
+
 export class ByteUsageTracker {
     private usageBlocks: UsageByteBlock[];
 
@@ -72,22 +76,99 @@ export class ByteUsageTracker {
         }
     }
 
+    /**
+     * Gets all of the usage blocks that have some overlap with the range specified by startIdx and endIdx.
+     * @param startIdx start of range (inclusive)
+     * @param endIdx end of range (inclusive)
+     * @returns an object that contains the blocks that overlap the range and information about the position of those blocks
+     *   in the usageblock array
+     * @example
+     * const result = getUsageBlocksInRange(0, 5); // where existing blocks are [6-9] and [10-999]
+     * // result will contain blocks = []; startIndex = 0; length = 0
+     * // because there's no overlap and this new range will be inserted at index 0 and displace
+     * // 0 existing blocks
+     */
     getUsageBlocksInRange(startIdx: number, endIdx: number): UsageBlocksInRangeResult {
+        function afterLastBlock(lastBlock: UsageByteBlock | null, currentBlock: UsageByteBlock): boolean {
+            if (!lastBlock) {
+                return true;
+            }
+            return lastBlock.startIdx < currentBlock.startIdx && (lastBlock.endIdx || 0) < currentBlock.startIdx;
+        }
         const result: UsageBlocksInRangeResult = {
             blocks: [] as UsageByteBlock[],
             startIndex: null,
             length: null
         };
-        let inBlocks = false;
+        let blocksInRange = false;
         let finishedBlocks = false;
         let idx: number = 0;
+        let lastBlock: UsageByteBlock | null = null;
+        // BLOCKS:        #1        #2                #3
+
+        // case 1:
+        //              [26...31][32....41]  [47.................66]
+        // [13...18]
+        // RESULT:                                                           #X #1 #2 #3           (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
+
+        // case 2:
+        //              [26...31][32....41]  [47.................66]
+        // [13.............28]
+        // RESULT:                                                           #X #X1.1 #1.2 #2 #3   (blocks in range = [#1])
+
+        // case 3:
+        //              [26...31][32....41]  [47.................66]
+        // [13..............................................61]
+        // RESULT:                                                           #X #X1 #X2 #X3.1 #3.2 (blocks in range = [#1, #2, #3])
+
+        // case 4:
+        //              [26...31][32....41]  [47.................66]
+        //                                                            [72....78]
+        // RESULT:                                                           #1 #2 #3 #X (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
+
+        // case 5:
+        //              [26...31][32....41]  [47.................66]
+        //                                                  [62........72]
+        // RESULT:                                                           #1 #2 #3X.1 #X.2 (blocks in range = [])
+
+        // case 6:
+        //              [26...31][32....41]  [47.................66]
+        //                  [30........................................72]
+        // RESULT:                                                           #1.1 #1.2X #2X #3.1X #3.2X (blocks in range = [#1, #2, #3])
+
+        // case 7:
+        //              [26...31][32....41]  [47.................66]
+        //                  [30........................................72]
+        // RESULT:                                                           #1.1 #1.2X #2X #3.1X #3.2X (blocks in range = [#1, #2, #3])
+
+        // case 8:
+        //              [26...31][32....41]                   [64..68]
+        //                                    [48.......57]
+        // RESULT:                                                           #1 #2 #X #3 (blocks in range = [])     - NOT SURE IF THIS IS ACTUALLY SUPPORTED!
         this.usageBlocks.forEach(block => {
             if (!block.endIdx) {
                 throw new Error("Unable to search for usage blocks when block.endIdx is not set for one of the items in the array.");
             }
-            if (startIdx >= block.startIdx && startIdx <= block.endIdx) {
+            if (lastBlock && !afterLastBlock(lastBlock, block)) {
+                throw new Error("Unexpected condition: usage blocks are not sorted - "
+                    + `LAST BLOCK: ${lastBlock.startIdx}-${lastBlock.endIdx}, CURRENT: ${block.startIdx}-${block.endIdx}`);
+            }
+            const lastBlockEndIndex = getBlockEndIndex(lastBlock);
+            const startOfRangeInThisBlock = startIdx >= block.startIdx && startIdx <= block.endIdx;
+            const endOfRangeInThisBlock = endIdx >= block.startIdx && endIdx <= block.endIdx;
+            const lastBlockBeforeNewRangeStart = startIdx > lastBlockEndIndex;
+            const currBlockAfterNewRangeStart = startIdx <= block.startIdx;
+            const currBlockStartsBeforeNewRangeEnd = block.startIdx <= endIdx;
+            const justEnteredRange = lastBlockBeforeNewRangeStart && currBlockAfterNewRangeStart && currBlockStartsBeforeNewRangeEnd;
+            if (startOfRangeInThisBlock || justEnteredRange) {
+                blocksInRange = true;
+            }
+            const rangeInGapBetweenBlocks = lastBlockEndIndex < startIdx && endIdx < block.startIdx;
+            if (rangeInGapBetweenBlocks) {
+                result.startIndex = idx;
+            } else if (startOfRangeInThisBlock) {
+                // start index falls in range of this block
                 result.blocks.push(block);
-                inBlocks = true;
                 if (result.startIndex === null) {
                     result.startIndex = idx;
                     result.length = 1;
@@ -95,9 +176,8 @@ export class ByteUsageTracker {
                 else {
                     result.length!++;
                 }
-            }
-            else if (endIdx >= block.startIdx && endIdx <= block.endIdx) {
-                inBlocks = true;
+            } else if (endOfRangeInThisBlock) {
+                // end index falls in range of this block
                 result.blocks.push(block);
                 if (result.startIndex === null) {
                     result.startIndex = idx;
@@ -106,16 +186,30 @@ export class ByteUsageTracker {
                 else {
                     result.length!++;
                 }
-            }
-            else if (inBlocks) {
+            } else if (blocksInRange) {
                 if (finishedBlocks) {
                     throw new Error("Unexpected condition: finished processing blocks in getUsageBlocksInRange but found another set of blocks!");
                 }
-                finishedBlocks = true;
-                inBlocks = false;
+                result.blocks.push(block);
             }
+            const beyondRange = endIdx < block.endIdx;
+            if (blocksInRange && (endOfRangeInThisBlock || beyondRange)) {
+                blocksInRange = false;
+                finishedBlocks = true;
+            }
+            lastBlock = block;
             idx++;
         });
+        if (result.blocks.length === 0) {
+            // doesn't overlap any existing blocks
+            if (this.usageBlocks.length === 0) {
+                result.startIndex = 0;
+                result.length = 0;
+            } else if (lastBlock && startIdx > getBlockEndIndex(lastBlock)) {
+                result.startIndex = idx;
+                result.length = 0;
+            }
+        }
         return result;
     }
 
