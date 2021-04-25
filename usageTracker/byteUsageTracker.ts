@@ -60,6 +60,9 @@ export class ByteUsageTracker {
     }
 
     addUsageBlock(startIdx: number, endIdx: number, used: boolean, tags: string[]) {
+        if (startIdx > endIdx) {
+            throw new Error(`Unable to add usage block when it ends before it starts! [${startIdx}-${endIdx}]`);
+        }
         const oldBlocksResult = this.getUsageBlocksInRange(startIdx, endIdx);
         const { blocks: oldBlocks, startIndex: oldStartIndex /*, length: oldLength */ } = oldBlocksResult;
         if (oldBlocks.length === 0) {
@@ -72,6 +75,14 @@ export class ByteUsageTracker {
         }
         else {
             const newBlocks = addNewRangeToBlocks(oldBlocks, startIdx, endIdx, used, tags);
+            let idx = 0;
+            newBlocks.forEach(block => {
+                idx++;
+                const blockEndIndex = getBlockEndIndex(block);
+                if (block.startIdx > blockEndIndex) {
+                    throw new Error(`Unable to add usage block [${startIdx}-${endIdx}] because splitting produced an invalid new block at position ${idx} [${block.startIdx}-${blockEndIndex}]`);
+                }
+            });
             this.replaceBlocks(this.usageBlocks, oldStartIndex, oldBlocks.length, newBlocks);
         }
     }
