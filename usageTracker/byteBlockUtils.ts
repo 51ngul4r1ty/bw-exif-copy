@@ -154,7 +154,27 @@ export function addNewRangeToBlocks(
     newPoints.forEach(point => {
         if (!inMarker && point.markerPointType === UsageByteBlockPointType.Start) {
             inMarker = true;
-            if (!blockToAdd) {
+            if (blockToAdd) {
+                // haven't reach end of block yet
+                if (blockToAdd.startIdx <= point.idx - 1) {
+                    blockToAdd.endIdx = point.idx - 1;
+                    result.push(blockToAdd);
+                    let tags = new Set<string>(blockToAdd.tags);
+                    let used = blockToAdd.used;
+                    lastBlockTags = new Set(tags);
+                    lastBlockUsed = used;
+                    newBlockTagList.forEach(tag => {
+                        tags.add(tag);
+                    })
+                    used = used || newBlockUsedFlag;
+                    blockToAdd = {
+                        startIdx: point.idx,
+                        endIdx: null,
+                        used,
+                        tags
+                    };
+                }
+            } else {
                 lastPotentialNewBlockStartIdx = point.idx;
             }
         }
