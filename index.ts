@@ -23,9 +23,13 @@ function hasFlag(shortFlag: string, longFlag: string): boolean {
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
 if (argCount === 1) {
+    console.log("Performing file analysis...");
+    console.log("");
     const filePath = path.resolve(nonOptionArgs[0]);
     const hasAnalyzeFlag = hasFlag("a", "analyze");
     const hasUsageReportFlag = hasFlag("u", "usage");
+    console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
+    console.log("");
     if (hasAnalyzeFlag || hasUsageReportFlag) {
         const logOpts = {
             logExifBufferUsage: hasUsageReportFlag, logExifDataDecoded: true,
@@ -37,6 +41,7 @@ if (argCount === 1) {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
 } else if (argCount === 2) {
+    console.log("Copying EXIF data from source to target file...");
     const sourceFilePath = path.resolve(nonOptionArgs[0]);
     const targetFilePath = path.resolve(nonOptionArgs[1]);
     const backupFilePath = targetFilePath + ".exif-copy.bak";

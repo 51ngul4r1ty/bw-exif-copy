@@ -50,7 +50,7 @@ export function processImageFileDirectory(
         );
         // NOTE: The header offset has been adjusted for, so we need the offset WITHOUT the header included here
         const relativeDataValueContainerOffset = bufferStartOffset + 8;
-        const trueDataValueContainerOffset = exifBuffer.getExifCursor() + relativeDataValueContainerOffset;
+        const trueDataValueContainerOffset = exifBuffer.getOffsetCursor() + relativeDataValueContainerOffset;
         const dataValueContainerLength = 4;
         const dataValueOrOffsetToValue = tiffBytesToValue(byteOrder,
             exifBuffer.getBufferByte(relativeDataValueContainerOffset + 0), exifBuffer.getBufferByte(relativeDataValueContainerOffset + 1),

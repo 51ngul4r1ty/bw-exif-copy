@@ -24,8 +24,8 @@ export class ExifBuffer {
     moveCursorToExifOffset(offset: number) {
         this.offsetCursor = (this.exifCursor || 0) + offset;
     }
-    getExifCursor() {
-        return this.exifCursor || 0;
+    getOffsetCursor() {
+        return this.offsetCursor || 0;
     }
     setExifCursor() {
         this.exifCursor = this.offsetCursor;
