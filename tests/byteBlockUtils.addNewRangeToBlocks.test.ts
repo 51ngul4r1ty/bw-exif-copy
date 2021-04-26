@@ -351,3 +351,48 @@ Deno.test({
         assertEquals(blockToString(actual[1]), "[19 to 19 used - tags:'superset']");
     },
 });
+
+Deno.test({
+    name: "byteBlockUtils.addNewRangeToBlocks() - add range that includes multiple existing ranges",
+    fn: async () => {
+        // arrange
+        const blocks: UsageByteBlock[] = [{
+            startIdx: 20,
+            endIdx: 25,
+            used: true,
+            tags: new Set<string>(["range 1"])
+        },{
+            startIdx: 26,
+            endIdx: 30,
+            used: true,
+            tags: new Set<string>(["range 2"])
+        },{
+            startIdx: 31,
+            endIdx: 35,
+            used: true,
+            tags: new Set<string>(["range 3"])
+        },{
+            startIdx: 36,
+            endIdx: 45,
+            used: true,
+            tags: new Set<string>(["range 4"])
+        }];
+        
+        const startIdx = 20;
+        const endIdx = 40;
+        const used = true;
+        const tags = ['containing range'];
+
+        // act
+        const actual = byteBlockUtils.addNewRangeToBlocks(blocks, startIdx, endIdx, used, tags);
+
+        // assert
+        assertEquals(actual.length, 5);
+
+        assertEquals(blockToString(actual[0]), "[20 to 25 used - tags:'range 1','containing range']");
+        assertEquals(blockToString(actual[1]), "[26 to 30 used - tags:'range 2','containing range']");
+        assertEquals(blockToString(actual[2]), "[31 to 35 used - tags:'range 3','containing range']");
+        assertEquals(blockToString(actual[3]), "[36 to 40 used - tags:'range 4','containing range']");
+        assertEquals(blockToString(actual[4]), "[41 to 45 used - tags:'range 4']");
+    },
+});

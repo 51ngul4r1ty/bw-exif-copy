@@ -39,6 +39,9 @@ import {
 export interface ConvertedValues {
     value: any | undefined;
     arrValue: any[] | undefined;
+    offsetStart: number | null; // container start offset- if containerLength is null this will simply be the "pointer" to where the unbounded data is obtained, otherwise it will be the IFD directory entry tag value offset
+    length: number | null; // this is the byte length of the value within the container- if this comes from a directory entry it can be in the range 1 to 4, otherwise it could be greater than 4
+    containerLength: number | null; // if this comes from directory entry it will be 4 otherwise it will be null
 }
 
 export function getConvertedValuesForDirectoryEntry(
@@ -47,6 +50,9 @@ export function getConvertedValuesForDirectoryEntry(
 ): ConvertedValues {
     let convertedValue: any | undefined;
     let convertedArrValue: any[] | undefined;
+    let valueOffsetStart: number | null = null;
+    let valueLength: number | null = null;
+    let valueContainerLength: number | null = null;
     let dataFormatToUse = directoryEntry.dataFormat;
     if (directoryEntry.dataFormat === FORMAT_UNDEFINED) {
         switch (tagNumberInfo?.format) {
@@ -111,6 +117,9 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.componentCount,
                 tags
             );
+            valueOffsetStart = directoryEntry.dataValueOrOffsetToValue;
+            valueLength = length;
+            valueContainerLength = null; // unbounded
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = "${stringValue}" (from offset) - FORMAT_ASCII_STRINGS, LEN > 4`
@@ -121,6 +130,9 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue,
                 directoryEntry.componentCount
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = length;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = "${stringValue}" (from data value) - FORMAT_ASCII_STRINGS, LEN <= 4`
@@ -141,6 +153,9 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue,
                 byteOrder
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = 1;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = ${unsignedShortValue} (from data value) - FORMAT_UNSIGNED_SHORT, LEN = 1`
@@ -152,6 +167,9 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue,
                 byteOrder
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = length;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = ${unsignedShortArrValue[0]} ${unsignedShortArrValue[1]} (from data value) - FORMAT_UNSIGNED_SHORT, LEN = 2`
@@ -170,12 +188,18 @@ export function getConvertedValuesForDirectoryEntry(
                 length,
                 tags
             );
+            valueOffsetStart = directoryEntry.dataValueOrOffsetToValue;
+            valueLength = length;
+            valueContainerLength = null; // unbounded
             convertedArrValue = unsignedByteArrValue;
         } else if (length > 1) {
             unsignedByteArrValue = getUnsignedByteNEltArrayFromDataValue(
                 length,
                 directoryEntry.dataValueOrOffsetToValue
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = length;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = ${unsignedByteArrValue[0]} ${unsignedByteArrValue[1]} (from data value) - FORMAT_UNSIGNED_BYTE, LEN > 1`
@@ -186,6 +210,9 @@ export function getConvertedValuesForDirectoryEntry(
             unsignedByteValue = getUnsignedByte1EltArrayItemFromDataValue(
                 directoryEntry.dataValueOrOffsetToValue
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = 1;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
                 console.log(
                     `TAG NAME = "${tagNumberInfo?.name}", TAG VALUE = ${unsignedByteValue} (from data value) - FORMAT_UNSIGNED_BYTE, LEN = 1`
@@ -203,6 +230,9 @@ export function getConvertedValuesForDirectoryEntry(
             directoryEntry.componentCount,
             byteOrder
         );
+        valueOffsetStart = directoryEntry.dataValueContainerOffset;
+        valueLength = 8;
+        valueContainerLength = null; // container unbounded, value is 8 bytes
         convertedValue = unsignedRationalArrValue[0];
         convertedArrValue = unsignedRationalArrValue;
         if (logExifTagFields) {
@@ -220,6 +250,9 @@ export function getConvertedValuesForDirectoryEntry(
             directoryEntry.componentCount,
             byteOrder
         );
+        valueOffsetStart = directoryEntry.dataValueContainerOffset;
+        valueLength = 8;
+        valueContainerLength = null; // container unbounded, value is 8 bytes
         convertedValue = signedRationalArrValue[0];
         convertedArrValue = signedRationalArrValue;
         if (logExifTagFields) {
@@ -241,6 +274,9 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue,
                 byteOrder
             );
+            valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            valueLength = 4;
+            valueContainerLength = directoryEntry.dataValueContainerLength;
             convertedValue = unsignedLongValue;
             if (logExifTagFields) {
                 console.log(
@@ -260,6 +296,9 @@ export function getConvertedValuesForDirectoryEntry(
     }
     return {
         value: convertedValue,
-        arrValue: convertedArrValue
+        arrValue: convertedArrValue,
+        offsetStart: valueOffsetStart,
+        length: valueLength,
+        containerLength: valueContainerLength
     }
 };

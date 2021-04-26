@@ -4,3 +4,4 @@ test-data
 test-data-out
 dist
 output.html
+coverage

@@ -1,10 +1,10 @@
 {
   "name": "exif-copy",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Copy EXIF data from one file to another while preserving rest of JPEG file content.",
   "main": "index.ts",
   "scripts": {
-    "test": "deno test --allow-read --allow-write --unstable --coverage",
+    "test": "deno test --allow-read --allow-write --unstable --coverage=coverage",
     "test-only": "deno test --allow-read --allow-write --unstable",
     "test-one": "npm run test -- --filter \"same point test\"",
     "start": "deno run --allow-read --allow-write --unstable ./index.ts",
@@ -15,7 +15,15 @@
     "build:osx": "deno compile --target x86_64-apple-darwin --unstable --allow-read --allow-write --output ./dist/osx/bw-exif-copy ./index.ts",
     "build:win": "deno compile --target x86_64-pc-windows-msvc --unstable --allow-read --allow-write --output ./dist/win/bw-exif-copy ./index.ts",
     "build:all": "npm run build & npm run build:osx & npm run build:win",
-    "package": "npm run build"
+    "package": "npm run build",
+    "clean:test-data": "rm -f ./test-data/DSC08303-Modified.JPG.exif-copy.bak",
+    "restore-test-data": "cp ./test-data/Copies/* ./test-data && npm run clean:test-data",
+    "test:analysis": "npm start -- -a ./test-data/DSC08303-Modified.JPG",
+    "test:analysis-source": "npm start -- -a ./test-data/DSC08303-Original.JPG",
+    "dump:modified": "npm start -- -u ./test-data/DSC08303-Modified.JPG",
+    "dump:modified-original": "npm start -- -u ./test-data/DSC08303-Modified-Original.JPG",
+    "dump:original": "npm start -- -u ./test-data/DSC08303-Original.JPG",
+    "test:copy": "npm start -- ./test-data/DSC08303-Original.JPG ./test-data/DSC08303-Modified.JPG"
   },
   "author": "",
   "license": "BSD-3-Clause",

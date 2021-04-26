@@ -154,6 +154,12 @@ export interface ExifGpsTimeStamp {
     second: number;
 }
 
+export interface FieldValueLocation {
+    offsetStart: number | null;
+    length: number | null;
+    containerLength: number | null;
+}
+
 export interface ExifTableData {
     standardFields: {
         inputDevice?: {
@@ -269,5 +275,8 @@ export interface ExifTableData {
     }
     unknownFields: {
         [tagNumber: number]: any;
+    }
+    fieldValueLocations: {
+        [tagNumber: number]: FieldValueLocation;
     }
 }

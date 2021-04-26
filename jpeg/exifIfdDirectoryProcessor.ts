@@ -14,6 +14,8 @@ export interface IfdDirectoryEntry {
     dataFormat: number;
     componentCount: number;
     dataValueOrOffsetToValue: number;
+    dataValueContainerOffset: number; // the offset of this directory entry
+    dataValueContainerLength: number; // the length of the offset entry value (usually 4 bytes?)
 }
 
 export interface IfdResult extends BaseProcessingResult {
@@ -28,7 +30,9 @@ export interface ImageFileDirectoryData {
 
 export type ImageFileDirectoryPartTypeData = BaseDecodedPartData & ImageFileDirectoryData;
 
-export function processImageFileDirectory(exifBuffer: ExifBuffer, byteOrder: TiffByteOrder, usageTag: string, offset: number = 0): IfdResult {
+export function processImageFileDirectory(
+    exifBuffer: ExifBuffer, byteOrder: TiffByteOrder, usageTag: string, tagEachIfdEntry: boolean, offset: number = 0,
+): IfdResult {
     const directoryEntryCount = tiffBytesToValue(byteOrder, exifBuffer.getBufferByte(offset + 0), exifBuffer.getBufferByte(offset + 1));
     let processedBufferLength = 2;
     const directoryEntries: IfdDirectoryEntry[] = [];
@@ -44,14 +48,22 @@ export function processImageFileDirectory(exifBuffer: ExifBuffer, byteOrder: Tif
             exifBuffer.getBufferByte(bufferStartOffset + 4), exifBuffer.getBufferByte(bufferStartOffset + 5),
             exifBuffer.getBufferByte(bufferStartOffset + 6), exifBuffer.getBufferByte(bufferStartOffset + 7)
         );
+        // NOTE: The header offset has been adjusted for, so we need the offset WITHOUT the header included here
+        const relativeDataValueContainerOffset = bufferStartOffset + 8;
+        const trueDataValueContainerOffset = exifBuffer.getOffsetCursor() + relativeDataValueContainerOffset;
+        const dataValueContainerLength = 4;
         const dataValueOrOffsetToValue = tiffBytesToValue(byteOrder,
-            exifBuffer.getBufferByte(bufferStartOffset + 8), exifBuffer.getBufferByte(bufferStartOffset + 9),
-            exifBuffer.getBufferByte(bufferStartOffset + 10), exifBuffer.getBufferByte(bufferStartOffset + 11));
+            exifBuffer.getBufferByte(relativeDataValueContainerOffset + 0), exifBuffer.getBufferByte(relativeDataValueContainerOffset + 1),
+            exifBuffer.getBufferByte(relativeDataValueContainerOffset + 2), exifBuffer.getBufferByte(relativeDataValueContainerOffset + 3));
+        const ifdTagNumberValueTag = `ifd-tag-#${tagNumber}-value`;
+        exifBuffer.markRangeWithUsageData(trueDataValueContainerOffset, 4, [ifdTagNumberValueTag]);
         directoryEntries.push({
             tagNumber,
             dataFormat,
             componentCount,
-            dataValueOrOffsetToValue
+            dataValueOrOffsetToValue,
+            dataValueContainerOffset: trueDataValueContainerOffset,
+            dataValueContainerLength
         })
         processedBufferLength += 12;
     }
@@ -63,8 +75,6 @@ export function processImageFileDirectory(exifBuffer: ExifBuffer, byteOrder: Tif
     processedBufferLength += 4;
     const result: IfdResult = {
         directoryEntries,
-//        rawExifData: exifBuffer.subarray(offset, offset + processedBufferLength),
-//        remainingExifBuffer: exifBuffer.subarray(offset + processedBufferLength, offset + exifBuffer.length - processedBufferLength),
         nextIfdOffset
     };
     exifBuffer.advanceCursorAndMarkBytesProcessed(processedBufferLength, [USAGE_TAG_IFD, usageTag]);

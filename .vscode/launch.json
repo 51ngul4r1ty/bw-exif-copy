@@ -21,6 +21,66 @@
             "attachSimplePort": 9229
         },
         {
+            "name": "Launch App (2)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "-a",
+                "./test-data/DSC08303-Modified.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
+            "name": "Launch App (3)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "./test-data/DSC08303-Original.JPG",
+                "./test-data/DSC08303-Modified.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
+            "name": "Launch App (4)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "-u",
+                "./test-data/DSC08303-Modified.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
             "name": "Tests",
             "request": "launch",
             "type": "pwa-node",
@@ -47,7 +107,7 @@
                 "--allow-all",
                 "--unstable",
                 "--filter",
-                "alternate scenario test"
+                "handle fully contained blocks"
             ],
             "outputCapture": "std",
             "attachSimplePort": 9229
