@@ -32,6 +32,7 @@ export interface TiffHeaderPartTypeData extends BaseDecodedPartData {
     byteOrder: TiffByteOrder;
 }
 
+// NOTE: exifBufferOverlayer.ts has overlayExifBuffer which was essentially copied from this function- it may be good to bring these back together in future.
 export function decodeExifBuffer(
     exifBufferWithHeader: Uint8Array, logExifDataDecoded: boolean, logExifBufferUsage: boolean, logExifTagFields: boolean,
     logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean

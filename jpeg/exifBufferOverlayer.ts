@@ -38,6 +38,7 @@ export interface OverlayTagItem {
     value: any;
 }
 
+// NOTE: This originally came from exifBufferDecoder's decodeExifBuffer - may be good to bring these back together in future.
 export function overlayExifBuffer(
     exifBufferWithHeader: Uint8Array, logExifDataDecoded: boolean, logExifBufferUsage: boolean, logExifTagFields: boolean,
     logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean,
@@ -45,10 +46,6 @@ export function overlayExifBuffer(
 ): Uint8Array {
     errorLog.throwErrorImmediately = false;
     let exifTableData: ExifTableData | null = null;
-    // const exifDecodedResult: ExifDecoded = {
-    //     exifParts: [],
-    //     exifTableData: null,
-    // };
 
     let exifBuffer = new ExifBuffer(exifBufferWithHeader);
     let byteOrder: TiffByteOrder;
@@ -57,11 +54,6 @@ export function overlayExifBuffer(
     {
         /* Process Exif Header */
         processExifHeader(exifBuffer);
-        // exifDecodedResult.exifParts.push({
-        //     name: "EXIF Header Block",
-        //     type: ExifDecodedPartType.ExifHeader,
-        //     data: exifBuffer.getDataForExifPart(),
-        // });
     }
 
     exifBuffer.setExifCursor();
@@ -77,7 +69,6 @@ export function overlayExifBuffer(
                 byteOrder: tiffHeaderResult.byteOrder
             }
         };
-        // exifDecodedResult.exifParts.push(tiffHeaderExifPart);
     }
 
     /* Process First IFD Record */
@@ -95,7 +86,6 @@ export function overlayExifBuffer(
                 ...ifdData
             }
         };
-        // exifDecodedResult.exifParts.push(exifPart);
     }
 
     {
@@ -139,7 +129,6 @@ export function overlayExifBuffer(
                     ...ifdData
                 }
             };
-            // exifDecodedResult.exifParts.push(exifPart);
         }
     }
 
@@ -157,7 +146,6 @@ export function overlayExifBuffer(
     const gpsOffsetRawValue = exifTableData.standardFields.image?.gpsInfo;
     if (gpsOffsetRawValue) {
         const gpsOffset = gpsOffsetRawValue || 0;
-        // const gpsOffset = getRelativeExifOffset("image.gpsInfo", gpsOffsetRawValue, exifOffsetAdjust);
 
         /* Process GPS IFD Record */
         exifBuffer.moveCursorToExifOffset(gpsOffset);
@@ -182,8 +170,6 @@ export function overlayExifBuffer(
                 ...ifdData
             },
         };
-        // exifDecodedResult.exifParts.push(exifPart);
-
     }
 
     {
