@@ -75,8 +75,6 @@ export function processImageFileDirectory(
     processedBufferLength += 4;
     const result: IfdResult = {
         directoryEntries,
-//        rawExifData: exifBuffer.subarray(offset, offset + processedBufferLength),
-//        remainingExifBuffer: exifBuffer.subarray(offset + processedBufferLength, offset + exifBuffer.length - processedBufferLength),
         nextIfdOffset
     };
     exifBuffer.advanceCursorAndMarkBytesProcessed(processedBufferLength, [USAGE_TAG_IFD, usageTag]);
