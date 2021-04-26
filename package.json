@@ -1,6 +1,6 @@
 {
   "name": "exif-copy",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Copy EXIF data from one file to another while preserving rest of JPEG file content.",
   "main": "index.ts",
   "scripts": {
@@ -20,6 +20,9 @@
     "restore-test-data": "cp ./test-data/Copies/* ./test-data && npm run clean:test-data",
     "test:analysis": "npm start -- -a ./test-data/DSC08303-Modified.JPG",
     "test:analysis-source": "npm start -- -a ./test-data/DSC08303-Original.JPG",
+    "dump:modified": "npm start -- -u ./test-data/DSC08303-Modified.JPG",
+    "dump:modified-original": "npm start -- -u ./test-data/DSC08303-Modified-Original.JPG",
+    "dump:original": "npm start -- -u ./test-data/DSC08303-Original.JPG",
     "test:copy": "npm start -- ./test-data/DSC08303-Original.JPG ./test-data/DSC08303-Modified.JPG"
   },
   "author": "",

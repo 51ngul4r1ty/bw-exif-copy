@@ -6,7 +6,9 @@ import { extract } from "./jpeg/extractor.ts";
 
 // interfaces/types
 import { ExtractLogOptions, FileMarkerData } from "./jpeg/jpegParsingTypes.ts";
-import { EXIF_IMAGE_ORIENTATION_TAG_NUMBER } from "./jpeg/tagNumbers.ts";
+
+// consts/enums
+import { EXIF_IMAGE_HEIGHT_TAG_NUMBER, EXIF_IMAGE_ORIENTATION_TAG_NUMBER, EXIF_IMAGE_WIDTH_TAG_NUMBER } from "./jpeg/tagNumbers.ts";
 
 
 export interface FileImageData {
@@ -224,9 +226,15 @@ export function convertFileDataToByteArray(fileData: FileData, removeExif: boole
 
 export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null) {
     const orientationValue = orientationToNumber(fileData.exifTableData?.standardFields.image?.orientation || ExifOrientation.Undefined);
+    const imageWidth = fileData.exifTableData?.standardFields.image?.imageWidth || 0;
+    const imageLength = fileData.exifTableData?.standardFields.image?.imageLength || 0;
     const tagEachIfdEntry = false; // at this time this isn't relevant unless you're doing analysis of metadata
-    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, [{ tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue }], tagEachIfdEntry);
-    // const mergedMetaData = exifMetaDataToOverwriteWith;
+    const tagsToPerserve = [
+        { tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue },
+        { tagNumber: EXIF_IMAGE_WIDTH_TAG_NUMBER, value: imageWidth },
+        { tagNumber: EXIF_IMAGE_HEIGHT_TAG_NUMBER, value: imageLength }
+    ];
+    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, tagsToPerserve, tagEachIfdEntry);
     const byteArray = convertFileDataToByteArray(fileData, !!writeOptions.removeExif, !!writeOptions.removePostEoiData, null, mergedMetaData, logStageInfo);
     await Deno.writeFile(filePath, byteArray);
 }
