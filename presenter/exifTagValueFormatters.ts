@@ -32,16 +32,36 @@ export function formatOrientation(orientation: ExifOrientation | undefined): str
         return orientation;
     }
     switch (orientation) {
-        case ExifOrientation.LowerLeft:
+        case ExifOrientation.LowerLeft: {
             return "lower left";
-        case ExifOrientation.LowerRight:
+        }
+        case ExifOrientation.LowerLeftMirrored: {
+            return "lower left mirrored";
+        }
+        case ExifOrientation.LowerRight: {
             return "lower right";
-        case ExifOrientation.Undefined:
+        }
+        case ExifOrientation.LowerRightMirrored: {
+            return "lower right mirrored";
+        }
+        case ExifOrientation.Undefined: {
             return "undefined";
-        case ExifOrientation.UpperLeft:
+        }
+        case ExifOrientation.UpperLeft: {
             return "upper left";
-        case ExifOrientation.UpperRight:
+        }
+        case ExifOrientation.UpperLeftMirrored: {
+            return "upper left mirrored";
+        }
+        case ExifOrientation.UpperRight: {
             return "upper right";
+        }
+        case ExifOrientation.UpperRightMirrored: {
+            return "upper right mirrored";
+        }
+        case ExifOrientation.Undefined: {
+            return "(undefined)";
+        }
         default: {
             throw new Error(`Unknown orientation value (${orientation})`);
         }
