@@ -3,15 +3,6 @@ Using
 
 * bw-exif-copy {source file} {target file}
 
-Future Enhancements
-===================
-
-Some fields aren't stored in the EXIF Metadata table that's collected while analyzing the file, so we could still add these:
-* GPSMapDatum
-* GPSStatus
-* GPSTimeStamp
-* GPSVersionID
-
 Troubleshooting Utils
 =====================
 
