@@ -6,9 +6,13 @@ export interface ExifRational {
 
 export enum ExifOrientation {
     UpperLeft = 1,
+    UpperLeftMirrored = 2,
     LowerRight = 3,
+    LowerRightMirrored = 4,
     UpperRight = 6,
+    UpperRightMirrored = 7,
     LowerLeft = 8,
+    LowerLeftMirrored = 8,
     Undefined = 9
 }
 

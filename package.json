@@ -1,6 +1,6 @@
 {
   "name": "exif-copy",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Copy EXIF data from one file to another while preserving rest of JPEG file content.",
   "main": "index.ts",
   "scripts": {

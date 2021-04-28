@@ -200,16 +200,33 @@ export function assertValueIsGpsSpeedRef(val: any): ExifGpsSpeedRef | undefined 
 
 export function numberToOrientation(val: number): ExifOrientation {
     switch (val) {
-        case ExifOrientation.UpperLeft:
+        case ExifOrientation.UpperLeft: {
             return ExifOrientation.UpperLeft;
-        case ExifOrientation.LowerRight:
+        }
+        case ExifOrientation.UpperLeftMirrored: {
+            return ExifOrientation.UpperLeftMirrored;
+        }
+        case ExifOrientation.LowerRight: {
             return ExifOrientation.LowerRight;
-        case ExifOrientation.UpperRight:
+        }
+        case ExifOrientation.LowerRightMirrored: {
+            return ExifOrientation.LowerRightMirrored;
+        }
+        case ExifOrientation.UpperRight: {
             return ExifOrientation.UpperRight;
-        case ExifOrientation.LowerLeft:
+        }
+        case ExifOrientation.UpperRightMirrored: {
+            return ExifOrientation.UpperRightMirrored;
+        }
+        case ExifOrientation.LowerLeft: {
             return ExifOrientation.LowerLeft;
-        case ExifOrientation.Undefined:
+        }
+        case ExifOrientation.LowerLeftMirrored: {
+            return ExifOrientation.LowerLeftMirrored;
+        }
+        case ExifOrientation.Undefined: {
             return ExifOrientation.Undefined;
+        }
         default: {
             throw new Error(`Unknown orientation value: ${val}`);
         }
