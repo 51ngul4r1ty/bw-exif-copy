@@ -1,4 +1,4 @@
-import { xmlp } from "./deps.ts";
+import { xmlp } from "../deps.ts";
 
 const { PullParser } = xmlp;
 

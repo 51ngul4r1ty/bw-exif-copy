@@ -3,8 +3,7 @@ import { fs, osPaths, path } from "./deps.ts";
 
 // utils
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
-import { collectExifTargetFileData } from "./folderReader.ts";
-import { readGpxFileContents } from "./gpxFileReader.ts";
+import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
 
 console.log("");
 console.log("Berryware Exif Copy v1.1");
@@ -63,27 +62,7 @@ if (argCount === 1) {
     if (hasBackupFile) {
         console.log("ERROR: Backup file exists- aborting exif-copy to avoid losing original file.");
     } else if (copyGeoTags) {
-        const gpxSourceFile = await readGpxFileContents(sourceFilePath);
-        if (gpxSourceFile.errorMessage) {
-            console.log(`ERROR: "${gpxSourceFile}" could not be parsed.  See errors below:`);
-            console.log(gpxSourceFile.errorMessage);
-        } else {
-            const isoToDateVal = (iso: string): number => (new Date(iso)).getTime();
-            const sortedTrackPoints = gpxSourceFile.trackPoints.sort((a, b) => isoToDateVal(a.time) - isoToDateVal(b.time));
-            sortedTrackPoints.forEach(trackPoint => {
-                console.log(`${trackPoint.time}`);
-            });
-            const targetFileResult = await collectExifTargetFileData(targetFilePath);
-            if (targetFileResult.errorMessage) {
-                console.log(`ERROR: "${gpxSourceFile}" could not be parsed.  See errors below:`);
-                console.log(gpxSourceFile.errorMessage);
-            } else {
-                const sortedTargetFiles = targetFileResult.targetFileInfo.sort((a, b) => a.dateTime!.getTime() - b.dateTime!.getTime());
-                sortedTargetFiles.forEach(targetFileInfo => {
-                    console.log(`${targetFileInfo.filePath}: ${targetFileInfo.dateTime}`);
-                });
-            }
-        }
+        await copyGeoTagsToTargetFolder(sourceFilePath, targetFilePath);
     } else {
         // TODO: Expose these options as command line options
         const logOpts = {
