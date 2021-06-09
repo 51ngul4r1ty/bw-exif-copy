@@ -1,8 +1,10 @@
 // externals
-import { path, fs } from "./deps.ts";
+import { fs, osPaths, path } from "./deps.ts";
 
 // utils
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
+import { collectExifTargetFileData } from "./folderReader.ts";
+import { readGpxFileContents } from "./gpxFileReader.ts";
 
 console.log("");
 console.log("Berryware Exif Copy v1.1");
@@ -19,6 +21,13 @@ function hasFlag(shortFlag: string, longFlag: string): boolean {
     const matchingOptionArgs = optionArgs.filter(arg => arg === `--$longFlag}` || arg === `-${shortFlag}`);
     return matchingOptionArgs.length > 0;
 };
+
+function pathResolve(relativeFilePath: string): string {
+    if (relativeFilePath.startsWith("~/")) {
+        return path.join(osPaths.home() || "", relativeFilePath.slice(1).replaceAll("\\", ""));
+    }
+    return path.resolve(relativeFilePath);
+}
 
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
@@ -41,12 +50,40 @@ if (argCount === 1) {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
 } else if (argCount === 2) {
-    console.log("Copying EXIF data from source to target file...");
-    const sourceFilePath = path.resolve(nonOptionArgs[0]);
-    const targetFilePath = path.resolve(nonOptionArgs[1]);
+    const sourceFilePath = pathResolve(nonOptionArgs[0]);
+    const targetFilePath = pathResolve(nonOptionArgs[1]);
+    const copyGeoTags = sourceFilePath.endsWith(".gpx");
+    if (copyGeoTags) {
+        console.log("Copying GPS data from GPX log file to target folder...");
+    } else {
+        console.log("Copying EXIF data from source to target file...");
+    }
     const backupFilePath = targetFilePath + ".exif-copy.bak";
-    if (fs.existsSync(backupFilePath)) {
+    const hasBackupFile = copyGeoTags ? fs.existsSync(backupFilePath) : false;
+    if (hasBackupFile) {
         console.log("ERROR: Backup file exists- aborting exif-copy to avoid losing original file.");
+    } else if (copyGeoTags) {
+        const gpxSourceFile = await readGpxFileContents(sourceFilePath);
+        if (gpxSourceFile.errorMessage) {
+            console.log(`ERROR: "${gpxSourceFile}" could not be parsed.  See errors below:`);
+            console.log(gpxSourceFile.errorMessage);
+        } else {
+            const isoToDateVal = (iso: string): number => (new Date(iso)).getTime();
+            const sortedTrackPoints = gpxSourceFile.trackPoints.sort((a, b) => isoToDateVal(a.time) - isoToDateVal(b.time));
+            sortedTrackPoints.forEach(trackPoint => {
+                console.log(`${trackPoint.time}`);
+            });
+            const targetFileResult = await collectExifTargetFileData(targetFilePath);
+            if (targetFileResult.errorMessage) {
+                console.log(`ERROR: "${gpxSourceFile}" could not be parsed.  See errors below:`);
+                console.log(gpxSourceFile.errorMessage);
+            } else {
+                const sortedTargetFiles = targetFileResult.targetFileInfo.sort((a, b) => a.dateTime!.getTime() - b.dateTime!.getTime());
+                sortedTargetFiles.forEach(targetFileInfo => {
+                    console.log(`${targetFileInfo.filePath}: ${targetFileInfo.dateTime}`);
+                });
+            }
+        }
     } else {
         // TODO: Expose these options as command line options
         const logOpts = {
@@ -73,10 +110,12 @@ if (argCount === 1) {
     console.log("Accepted command line args:");
     console.log("  1) 2 arguments for source and target file names.");
     console.log("  2) A single argument for file to analyze plus one option (a/analyze or u/usage).");
+    console.log("  3) 2 arguments for source GPX file and target folder.")
     console.log("");
     console.log("For example,");
     console.log("  1) use `bw-exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
     console.log("  2) use `bw-exif-copy --analyze ./sourceFolder/file1.jpg`");
+    console.log("  3) use `bw-exif-copy ./sourceFolder/geotag-log.gpx ./targetFolder")
     console.log("");
     console.log("NOTE: bw-exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
 }
