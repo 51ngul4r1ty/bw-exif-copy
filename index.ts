@@ -4,6 +4,7 @@ import { fs, osPaths, path } from "./deps.ts";
 // utils
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
 import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
+import { modifyDatesInFolderOrFile } from "./dateAdjuster/dataAdjuster.ts";
 
 console.log("");
 console.log("Berryware Exif Copy v1.1");
@@ -15,10 +16,51 @@ function getOptionArgs(): string[] {
     return optionArgs;
 }
 
+interface OptionArg {
+    name: string;
+    value: string | null;
+}
+
+function parseOptionArg(optionArg: string): OptionArg {
+    const idx = optionArg.indexOf("=");
+    if (idx >= 0) {
+        return {
+            name: optionArg.substr(0, idx),
+            value: optionArg.substr(idx + 1)
+        }
+    }
+    return {
+        name: optionArg,
+        value: null
+    }
+}
+
+function getOptionArgObjs(): OptionArg[] {
+    return getOptionArgs().map(item => parseOptionArg(item));
+}
+
 function hasFlag(shortFlag: string, longFlag: string): boolean {
-    const optionArgs = getOptionArgs();
-    const matchingOptionArgs = optionArgs.filter(arg => arg === `--$longFlag}` || arg === `-${shortFlag}`);
+    const optionArgs = getOptionArgObjs();
+    const matchingOptionArgs = optionArgs.filter(arg => arg.name === `--$longFlag}` || arg.name === `-${shortFlag}`);
     return matchingOptionArgs.length > 0;
+};
+
+/**
+ * Returns a flag value for the flag name.
+ * @param shortFlag 
+ * @param longFlag 
+ * @returns null if there was no value but the arg was present, undefined if the arg wasn't found at all.
+ */
+function getFlagValue(shortFlag: string, longFlag: string): string | null | undefined {
+    const optionArgs = getOptionArgObjs();
+    const matchingOptionArgs = optionArgs.filter(arg => {
+        const result = arg.name === `--${longFlag}` || arg.name === `-${shortFlag}`
+        return result;
+    });
+    if (matchingOptionArgs.length === 1) {
+        return matchingOptionArgs[0].value;
+    }
+    return undefined;
 };
 
 function pathResolve(relativeFilePath: string): string {
@@ -31,20 +73,33 @@ function pathResolve(relativeFilePath: string): string {
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
 if (argCount === 1) {
-    console.log("Performing file analysis...");
-    console.log("");
     const filePath = path.resolve(nonOptionArgs[0]);
     const hasAnalyzeFlag = hasFlag("a", "analyze");
     const hasUsageReportFlag = hasFlag("u", "usage");
-    console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
+    const addDaysValue = getFlagValue("ad", "add-days");
     console.log("");
     if (hasAnalyzeFlag || hasUsageReportFlag) {
+        console.log("Performing file analysis...");
+        console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
+        console.log("");
         const logOpts = {
             logExifBufferUsage: hasUsageReportFlag, logExifDataDecoded: true,
             logExifTagFields: false, logUnknownExifTagFields: true,
             logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag // usage report benefits from this info, but it may have perf implications
         }
         await readFileContents("file", filePath, logOpts);
+    } else if (addDaysValue) {
+        const daysToAdd = parseInt(addDaysValue);
+        console.log("Adjusting date on specific file(s)...");
+        if (daysToAdd > 0) {
+            console.log(`  (adding days: ${daysToAdd})`);
+        } else if (daysToAdd < 0) {
+            console.log(`  (removing days: ${-daysToAdd})`);
+        } else {
+            console.log(`  (not adding/removing days)`);
+        }
+        console.log("");
+        await modifyDatesInFolderOrFile(filePath, daysToAdd);
     } else {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }

@@ -30,6 +30,9 @@ export class ExifBuffer {
     setExifCursor() {
         this.exifCursor = this.offsetCursor;
     }
+    getExifCursor() {
+        return this.exifCursor;
+    }
     advanceCursorAndMarkBytesProcessed(length: number, tags: string[]) {
         this.startingOffset = this.offsetCursor;
         this.usageTracker.addUsageBlock(this.offsetCursor, this.offsetCursor + length - 1, true, tags);

@@ -36,12 +36,19 @@ import {
 } from "./exifFormatConsts.ts";
 // import * as tagNumbers from "./tagNumbers.ts";
 
+export enum ValueContainerType {
+    None = 0,
+    IfdInPlace = 1,
+    OutsideIfd = 2
+}
+
 export interface ConvertedValues {
     value: any | undefined;
     arrValue: any[] | undefined;
     offsetStart: number | null; // container start offset- if containerLength is null this will simply be the "pointer" to where the unbounded data is obtained, otherwise it will be the IFD directory entry tag value offset
     length: number | null; // this is the byte length of the value within the container- if this comes from a directory entry it can be in the range 1 to 4, otherwise it could be greater than 4
     containerLength: number | null; // if this comes from directory entry it will be 4 otherwise it will be null
+    containerType: ValueContainerType;
 }
 
 export function getConvertedValuesForDirectoryEntry(
@@ -51,6 +58,7 @@ export function getConvertedValuesForDirectoryEntry(
     let convertedValue: any | undefined;
     let convertedArrValue: any[] | undefined;
     let valueOffsetStart: number | null = null;
+    let containerType: ValueContainerType = ValueContainerType.None;
     let valueLength: number | null = null;
     let valueContainerLength: number | null = null;
     let dataFormatToUse = directoryEntry.dataFormat;
@@ -118,6 +126,7 @@ export function getConvertedValuesForDirectoryEntry(
                 tags
             );
             valueOffsetStart = directoryEntry.dataValueOrOffsetToValue;
+            containerType = ValueContainerType.OutsideIfd;
             valueLength = length;
             valueContainerLength = null; // unbounded
             if (logExifTagFields) {
@@ -131,6 +140,7 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.componentCount
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.OutsideIfd;
             valueLength = length;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
@@ -154,6 +164,7 @@ export function getConvertedValuesForDirectoryEntry(
                 byteOrder
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.IfdInPlace;
             valueLength = 1;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
@@ -168,6 +179,7 @@ export function getConvertedValuesForDirectoryEntry(
                 byteOrder
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.IfdInPlace;
             valueLength = length;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
@@ -189,6 +201,7 @@ export function getConvertedValuesForDirectoryEntry(
                 tags
             );
             valueOffsetStart = directoryEntry.dataValueOrOffsetToValue;
+            containerType = ValueContainerType.OutsideIfd;
             valueLength = length;
             valueContainerLength = null; // unbounded
             convertedArrValue = unsignedByteArrValue;
@@ -198,6 +211,7 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.IfdInPlace;
             valueLength = length;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
@@ -211,6 +225,7 @@ export function getConvertedValuesForDirectoryEntry(
                 directoryEntry.dataValueOrOffsetToValue
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.IfdInPlace;
             valueLength = 1;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             if (logExifTagFields) {
@@ -231,6 +246,7 @@ export function getConvertedValuesForDirectoryEntry(
             byteOrder
         );
         valueOffsetStart = directoryEntry.dataValueContainerOffset;
+        containerType = ValueContainerType.OutsideIfd;
         valueLength = 8;
         valueContainerLength = null; // container unbounded, value is 8 bytes
         convertedValue = unsignedRationalArrValue[0];
@@ -251,6 +267,7 @@ export function getConvertedValuesForDirectoryEntry(
             byteOrder
         );
         valueOffsetStart = directoryEntry.dataValueContainerOffset;
+        containerType = ValueContainerType.OutsideIfd;
         valueLength = 8;
         valueContainerLength = null; // container unbounded, value is 8 bytes
         convertedValue = signedRationalArrValue[0];
@@ -275,6 +292,7 @@ export function getConvertedValuesForDirectoryEntry(
                 byteOrder
             );
             valueOffsetStart = directoryEntry.dataValueContainerOffset;
+            containerType = ValueContainerType.IfdInPlace;
             valueLength = 4;
             valueContainerLength = directoryEntry.dataValueContainerLength;
             convertedValue = unsignedLongValue;
@@ -294,11 +312,23 @@ export function getConvertedValuesForDirectoryEntry(
             );
         }
     }
+    if (containerType === ValueContainerType.None) {
+        throw new Error("Unexpected condition: containerType must be assigned a value!");
+    }
+    let offsetStart: number | null;
+    if (valueOffsetStart === null) {
+        offsetStart = null;
+    } else if (containerType === ValueContainerType.OutsideIfd) {
+        offsetStart = valueOffsetStart + (exifBuffer.getExifCursor() || 0); // add EXIF header length to offset
+    } else {
+        offsetStart = valueOffsetStart;
+    }
     return {
         value: convertedValue,
         arrValue: convertedArrValue,
-        offsetStart: valueOffsetStart,
+        offsetStart,
+        containerType,
         length: valueLength,
-        containerLength: valueContainerLength
+        containerLength: valueContainerLength,
     }
 };

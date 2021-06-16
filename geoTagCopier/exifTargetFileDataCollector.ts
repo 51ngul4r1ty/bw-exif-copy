@@ -3,6 +3,7 @@ import { path } from "../deps.ts";
 
 // utils
 import { readFileContents } from "../fileReaderWriter.ts";
+import { isValidFile } from "../utils/fileUtil.ts";
 import { isCacheCurrent, readFromCacheFile, writeToCacheFile } from "./cacheFileManager.ts";
 
 // interfaces/types
@@ -13,10 +14,6 @@ export const CACHE_FILE_NAME = "./.bw-exif-copy-cache";
 export interface CollectExifTargetFileDataResult {
     targetFileInfo: TargetFileInfo[];
     errorMessage: string;
-}
-
-export const isValidFile = (filePath: string) => {
-    return filePath.toLowerCase().endsWith(".jpg");
 }
 
 export const collectExifTargetFileData = async (folderPath: string): Promise<CollectExifTargetFileDataResult> => {
