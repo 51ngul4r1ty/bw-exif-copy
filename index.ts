@@ -4,10 +4,10 @@ import { fs, osPaths, path } from "./deps.ts";
 // utils
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
 import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
-import { modifyDatesInFolderOrFile } from "./dateAdjuster/dataAdjuster.ts";
+import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
 
 console.log("");
-console.log("Berryware Exif Copy v1.1");
+console.log("Berryware Exif Copy v1.2");
 console.log("========================");
 console.log("");
 
@@ -145,11 +145,13 @@ if (argCount === 1) {
     console.log("  1) 2 arguments for source and target file names.");
     console.log("  2) A single argument for file to analyze plus one option (a/analyze or u/usage).");
     console.log("  3) 2 arguments for source GPX file and target folder.")
+    console.log("  4) A single argument for folder to update plus option to add days to date (ad/add-days={number}).")
     console.log("");
     console.log("For example,");
     console.log("  1) use `bw-exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
     console.log("  2) use `bw-exif-copy --analyze ./sourceFolder/file1.jpg`");
     console.log("  3) use `bw-exif-copy ./sourceFolder/geotag-log.gpx ./targetFolder")
+    console.log("  4) use `bw-exif-copy --add-days=-1 ./targetFolder")
     console.log("");
     console.log("NOTE: bw-exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
 }

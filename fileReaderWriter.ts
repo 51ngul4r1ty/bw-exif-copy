@@ -232,15 +232,10 @@ export interface TagNumberAndValue<T> {
     value: T;
 }
 
-// ... BUSY HERE ...
-// CURRENT BUG: It is overwriting wrong areas of buffer for EXIF_IMAGE_ORIENTATION_TAG_NUMBER + other 2 now that I've made changes to support string date updating
-// (must be because of adding 6 chars to the offset???)
-//
-
 export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null, tagsToModify?: TagNumberAndValue<any>[]) {
     const orientationValue = orientationToNumber(fileData.exifTableData?.standardFields.image?.orientation || ExifOrientation.Undefined);
-    const imageWidth = fileData.exifTableData?.standardFields.image?.imageWidth || 0;
-    const imageLength = fileData.exifTableData?.standardFields.image?.imageLength || 0;
+    const imageWidth = fileData.exifTableData?.standardFields.image?.pixelWidth || 0;
+    const imageLength = fileData.exifTableData?.standardFields.image?.pixelHeight || 0;
     const tagEachIfdEntry = false; // at this time this isn't relevant unless you're doing analysis of metadata
     let tagsToPreserve: TagNumberAndValue<any>[] = [
         { tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue },
