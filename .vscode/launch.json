@@ -81,6 +81,46 @@
             "attachSimplePort": 9229
         },
         {
+            "name": "Launch App (5)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "~/Pictures/Unprocessed\\ Photos/2021-06-06/06-06-2021_09_20AM.gpx",
+                "~/Pictures/Unprocessed\\ Photos/2021-06-06/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
+            "name": "Launch App (6)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "--add-days=-1",
+                "/Users/kevin/Pictures/Unprocessed Photos/2021-06-06/temp2"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
             "name": "Tests",
             "request": "launch",
             "type": "pwa-node",
@@ -107,7 +147,7 @@
                 "--allow-all",
                 "--unstable",
                 "--filter",
-                "handle fully contained blocks"
+                "add range that includes multiple existing ranges"
             ],
             "outputCapture": "std",
             "attachSimplePort": 9229
@@ -145,6 +185,23 @@
             ],
             "outputCapture": "std",
             "attachSimplePort": 9229
-        }
-   ]
+        },
+        {
+            "name": "Tests (dump)",
+            "request": "launch",
+            "type": "pwa-node",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "test",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable",
+                "--filter",
+                "add range that includes multiple existing ranges"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+  ]
 }

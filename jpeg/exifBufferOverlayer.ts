@@ -38,6 +38,11 @@ export interface OverlayTagItem {
     value: any;
 }
 
+export enum ReplaceMode {
+    ValueInContainer = 1,
+    ValueNotInContainer = 2
+}
+
 // NOTE: This originally came from exifBufferDecoder's decodeExifBuffer - may be good to bring these back together in future.
 export function overlayExifBuffer(
     exifBufferWithHeader: Uint8Array, logExifDataDecoded: boolean, logExifBufferUsage: boolean, logExifTagFields: boolean,
@@ -254,27 +259,48 @@ export function overlayExifBuffer(
         overlayTagItems.forEach(overlayTagItem => {
             const fieldValueLocation = exifTableData!.fieldValueLocations[overlayTagItem.tagNumber];
             if (fieldValueLocation) {
+                let replaceMode = ReplaceMode.ValueInContainer;
                 if (fieldValueLocation.containerLength === null) {
-                    throw new Error("Unable to overlay unbound field value container");
+                    if (overlayTagItem.value.length && fieldValueLocation.length === overlayTagItem.value.length) {
+                        // special case- we can overlay this (probably something like a date field - 20 characters with null terminator)
+                        replaceMode = ReplaceMode.ValueNotInContainer;
+                    } else {
+                        throw new Error("Unable to overlay unbound field value container");
+                    }
                 }
-                if (fieldValueLocation.containerLength > 4) {
-                    throw new Error(`Unable to overlay unbound field value container (length is >4: ${fieldValueLocation.containerLength})`);
+                let containerLength = fieldValueLocation.containerLength || 0;
+                if (containerLength > 4) {
+                    throw new Error(`Unable to overlay unbound field value container (length is >4: ${containerLength})`);
                 }
                 const offsetStart = fieldValueLocation.offsetStart;
                 if (!offsetStart && offsetStart !== 0) {
                     throw new Error("fieldValueLocation.offsetStart is null or undefined");
                 } else {
-                    // clear out old container
-                    for (let i = 0; i < fieldValueLocation.containerLength; i++) {
-                        result[offsetStart + i] = 0;
+                    if (replaceMode === ReplaceMode.ValueInContainer) {
+                        // clear out old container
+                        for (let i = 0; i < containerLength; i++) {
+                            result[offsetStart + i] = 0;
+                        }
+                        let val = overlayTagItem.value;
+                        let idx = 0;
+                        while (val > 0) {
+                            result[offsetStart + idx] = val & 255;
+                            val = val >> 8;
+                            idx++;
+                        }
+                    } else {
+                        if (typeof overlayTagItem.value !== 'string') {
+                            throw new Error("overlayTagItem.value is not a string- the only unbounded values supported are strings of equal length");
+                        } else {
+                            let idx = 0;
+                            for (let i = 0; i < overlayTagItem.value.length; i++) {
+                                const charCode = overlayTagItem.value.charCodeAt(i);
+                                result[offsetStart + idx] = charCode;
+                                idx++;
+                            }
+                        }
                     }
-                    let val = overlayTagItem.value;
-                    let idx = 0;
-                    while (val > 0) {
-                        result[offsetStart + idx] = val & 255;
-                        val = val >> 8;
-                        idx++;
-                    }
+                    
                     replacedCount++;
                     console.log(`EXIF tag number overwritten: ${overlayTagItem.tagNumber} with value ${overlayTagItem.value}`);
                 }

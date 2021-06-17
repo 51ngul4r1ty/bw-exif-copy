@@ -1,3 +1,6 @@
+// externals
+import { fs } from "./deps.ts";
+
 // utils
 import { overlayMetaDataFields } from "./exifOverwriter/exifOverwriter.ts";
 import { ExifOrientation, ExifTableData } from "./jpeg/exifFormatTypes.ts";
@@ -224,17 +227,40 @@ export function convertFileDataToByteArray(fileData: FileData, removeExif: boole
     return result;
 }
 
-export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null) {
+export interface TagNumberAndValue<T> {
+    tagNumber: number,
+    value: T;
+}
+
+export async function writeFileContents(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null, tagsToModify?: TagNumberAndValue<any>[]) {
     const orientationValue = orientationToNumber(fileData.exifTableData?.standardFields.image?.orientation || ExifOrientation.Undefined);
-    const imageWidth = fileData.exifTableData?.standardFields.image?.imageWidth || 0;
-    const imageLength = fileData.exifTableData?.standardFields.image?.imageLength || 0;
+    const imageWidth = fileData.exifTableData?.standardFields.image?.pixelWidth || 0;
+    const imageLength = fileData.exifTableData?.standardFields.image?.pixelHeight || 0;
     const tagEachIfdEntry = false; // at this time this isn't relevant unless you're doing analysis of metadata
-    const tagsToPerserve = [
+    let tagsToPreserve: TagNumberAndValue<any>[] = [
         { tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue },
         { tagNumber: EXIF_IMAGE_WIDTH_TAG_NUMBER, value: imageWidth },
         { tagNumber: EXIF_IMAGE_HEIGHT_TAG_NUMBER, value: imageLength }
     ];
-    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, tagsToPerserve, tagEachIfdEntry);
+    tagsToPreserve = tagsToPreserve.concat(tagsToModify || []);
+    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, tagsToPreserve, tagEachIfdEntry);
     const byteArray = convertFileDataToByteArray(fileData, !!writeOptions.removeExif, !!writeOptions.removePostEoiData, null, mergedMetaData, logStageInfo);
     await Deno.writeFile(filePath, byteArray);
+}
+
+export async function writeFileContentsWithBackup(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null, tagsToModify?: TagNumberAndValue<any>[]) {
+    const backupFilePath = filePath + ".exif-copy.bak";
+    const hasBackupFile = fs.existsSync(backupFilePath);
+    if (hasBackupFile) {
+        return false;
+    }
+
+    const outputFilePath = filePath + ".exif-copy.tmp";
+
+    await writeFileContents(outputFilePath, fileData, writeOptions, exifMetaDataToOverwriteWith, logStageInfo, tagsToModify);
+
+    Deno.rename(filePath, backupFilePath);
+    Deno.rename(outputFilePath, filePath);
+
+    return true;
 }

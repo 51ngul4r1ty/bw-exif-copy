@@ -504,7 +504,7 @@ TAG_NUMBER_INFO[EXIF_DATETIME_DIGITIZED] = {
     name: "DateTimeDigitized",
     format: "ascii string",
     compoNo: 20,
-    desc: "Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0 x9003)."
+    desc: "Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal (0x9003)."
 };
 TAG_NUMBER_INFO[EXIF_COMPONENT_CONFIG] = {
     name: "ComponentConfiguration",

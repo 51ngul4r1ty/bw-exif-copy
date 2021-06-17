@@ -1,11 +1,13 @@
 // externals
-import { path, fs } from "./deps.ts";
+import { fs, osPaths, path } from "./deps.ts";
 
 // utils
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
+import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
+import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
 
 console.log("");
-console.log("Berryware Exif Copy v1.1");
+console.log("Berryware Exif Copy v1.2");
 console.log("========================");
 console.log("");
 
@@ -14,39 +16,108 @@ function getOptionArgs(): string[] {
     return optionArgs;
 }
 
+interface OptionArg {
+    name: string;
+    value: string | null;
+}
+
+function parseOptionArg(optionArg: string): OptionArg {
+    const idx = optionArg.indexOf("=");
+    if (idx >= 0) {
+        return {
+            name: optionArg.substr(0, idx),
+            value: optionArg.substr(idx + 1)
+        }
+    }
+    return {
+        name: optionArg,
+        value: null
+    }
+}
+
+function getOptionArgObjs(): OptionArg[] {
+    return getOptionArgs().map(item => parseOptionArg(item));
+}
+
 function hasFlag(shortFlag: string, longFlag: string): boolean {
-    const optionArgs = getOptionArgs();
-    const matchingOptionArgs = optionArgs.filter(arg => arg === `--$longFlag}` || arg === `-${shortFlag}`);
+    const optionArgs = getOptionArgObjs();
+    const matchingOptionArgs = optionArgs.filter(arg => arg.name === `--$longFlag}` || arg.name === `-${shortFlag}`);
     return matchingOptionArgs.length > 0;
 };
+
+/**
+ * Returns a flag value for the flag name.
+ * @param shortFlag 
+ * @param longFlag 
+ * @returns null if there was no value but the arg was present, undefined if the arg wasn't found at all.
+ */
+function getFlagValue(shortFlag: string, longFlag: string): string | null | undefined {
+    const optionArgs = getOptionArgObjs();
+    const matchingOptionArgs = optionArgs.filter(arg => {
+        const result = arg.name === `--${longFlag}` || arg.name === `-${shortFlag}`
+        return result;
+    });
+    if (matchingOptionArgs.length === 1) {
+        return matchingOptionArgs[0].value;
+    }
+    return undefined;
+};
+
+function pathResolve(relativeFilePath: string): string {
+    if (relativeFilePath.startsWith("~/")) {
+        return path.join(osPaths.home() || "", relativeFilePath.slice(1).replaceAll("\\", ""));
+    }
+    return path.resolve(relativeFilePath);
+}
 
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
 if (argCount === 1) {
-    console.log("Performing file analysis...");
-    console.log("");
     const filePath = path.resolve(nonOptionArgs[0]);
     const hasAnalyzeFlag = hasFlag("a", "analyze");
     const hasUsageReportFlag = hasFlag("u", "usage");
-    console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
+    const addDaysValue = getFlagValue("ad", "add-days");
     console.log("");
     if (hasAnalyzeFlag || hasUsageReportFlag) {
+        console.log("Performing file analysis...");
+        console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
+        console.log("");
         const logOpts = {
             logExifBufferUsage: hasUsageReportFlag, logExifDataDecoded: true,
             logExifTagFields: false, logUnknownExifTagFields: true,
             logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag // usage report benefits from this info, but it may have perf implications
         }
         await readFileContents("file", filePath, logOpts);
+    } else if (addDaysValue) {
+        const daysToAdd = parseInt(addDaysValue);
+        console.log("Adjusting date on specific file(s)...");
+        if (daysToAdd > 0) {
+            console.log(`  (adding days: ${daysToAdd})`);
+        } else if (daysToAdd < 0) {
+            console.log(`  (removing days: ${-daysToAdd})`);
+        } else {
+            console.log(`  (not adding/removing days)`);
+        }
+        console.log("");
+        await modifyDatesInFolderOrFile(filePath, daysToAdd);
     } else {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
 } else if (argCount === 2) {
-    console.log("Copying EXIF data from source to target file...");
-    const sourceFilePath = path.resolve(nonOptionArgs[0]);
-    const targetFilePath = path.resolve(nonOptionArgs[1]);
+    const sourceFilePath = pathResolve(nonOptionArgs[0]);
+    const targetFilePath = pathResolve(nonOptionArgs[1]);
+    const copyGeoTags = sourceFilePath.endsWith(".gpx");
+    if (copyGeoTags) {
+        console.log("Copying GPS data from GPX log file to target folder...");
+    } else {
+        console.log("Copying EXIF data from source to target file...");
+    }
     const backupFilePath = targetFilePath + ".exif-copy.bak";
-    if (fs.existsSync(backupFilePath)) {
+    const hasBackupFile = copyGeoTags ? fs.existsSync(backupFilePath) : false;
+    if (hasBackupFile) {
         console.log("ERROR: Backup file exists- aborting exif-copy to avoid losing original file.");
+    } else if (copyGeoTags) {
+        await copyGeoTagsToTargetFolder(sourceFilePath, targetFilePath);
     } else {
         // TODO: Expose these options as command line options
         const logOpts = {
@@ -73,10 +144,14 @@ if (argCount === 1) {
     console.log("Accepted command line args:");
     console.log("  1) 2 arguments for source and target file names.");
     console.log("  2) A single argument for file to analyze plus one option (a/analyze or u/usage).");
+    console.log("  3) 2 arguments for source GPX file and target folder.")
+    console.log("  4) A single argument for folder to update plus option to add days to date (ad/add-days={number}).")
     console.log("");
     console.log("For example,");
     console.log("  1) use `bw-exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
     console.log("  2) use `bw-exif-copy --analyze ./sourceFolder/file1.jpg`");
+    console.log("  3) use `bw-exif-copy ./sourceFolder/geotag-log.gpx ./targetFolder")
+    console.log("  4) use `bw-exif-copy --add-days=-1 ./targetFolder")
     console.log("");
     console.log("NOTE: bw-exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
 }

@@ -1,7 +1,15 @@
 Using
 =====
 
-* bw-exif-copy {source file} {target file}
+To Copy EXIF Data from One File To Another
+------------------------------------------
+
+* `bw-exif-copy {source file} {target file}`
+
+To Copy Geotag Info from GPX File to Folder
+-------------------------------------------
+
+* `npm start -- ~/Pictures/Unprocessed\ Photos/2021-06-06/06-06-2021_09_20AM.gpx ~/Pictures/Unprocessed\ Photos/2021-06-06/`
 
 Troubleshooting Utils
 =====================
