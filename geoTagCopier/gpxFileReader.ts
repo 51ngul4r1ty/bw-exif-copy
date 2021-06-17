@@ -78,7 +78,6 @@ export const readGpxFileContents = async (filePath: string): Promise<ReadGpxFile
                     time: lastTime,
                     src: lastSrc
                 })
-                // console.log(`LAT=${lastLat} LON=${lastLon} ELE=${lastEle} TIME=${lastTime} SRC=${lastSrc}`);
             }
         }
         if (event.name === "text") {
