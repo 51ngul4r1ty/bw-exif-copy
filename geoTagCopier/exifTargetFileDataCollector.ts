@@ -36,8 +36,6 @@ export const collectExifTargetFileData = async (folderPath: string): Promise<Col
             const filePath = `${folderPath}/${dirEntry.name}`;
             const fileContents = await readFileContents(dirEntry.name, filePath);
             const dateTime = fileContents.exifTableData?.standardFields.date?.dateTime;
-            // const originalDateTime = fileContents.exifTableData?.standardFields.date?.originalDateTime;
-            // const digitizedDateTime = fileContents.exifTableData?.standardFields.date?.digitizedDateTime;
 
             targetFileInfo.push({
                 filePath,
