@@ -7,8 +7,8 @@ import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
 import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
 
 console.log("");
-console.log("Berryware Exif Copy v1.2");
-console.log("========================");
+console.log("Berryware Exif Copy v1.2.1");
+console.log("==========================");
 console.log("");
 
 function getOptionArgs(): string[] {
@@ -41,7 +41,7 @@ function getOptionArgObjs(): OptionArg[] {
 
 function hasFlag(shortFlag: string, longFlag: string): boolean {
     const optionArgs = getOptionArgObjs();
-    const matchingOptionArgs = optionArgs.filter(arg => arg.name === `--$longFlag}` || arg.name === `-${shortFlag}`);
+    const matchingOptionArgs = optionArgs.filter(arg => arg.name === `--${longFlag}` || arg.name === `-${shortFlag}`);
     return matchingOptionArgs.length > 0;
 };
 
