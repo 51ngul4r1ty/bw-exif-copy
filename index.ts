@@ -70,6 +70,17 @@ function pathResolve(relativeFilePath: string): string {
     return path.resolve(relativeFilePath);
 }
 
+function logMessageForUnitToAdd(unit: string, valToAdd: number) {
+    if (valToAdd > 0) {
+        console.log(`  (adding ${unit}: ${valToAdd})`);
+    } else if (valToAdd < 0) {
+        console.log(`  (removing ${unit}: ${-valToAdd})`);
+    } else {
+        console.log(`  (not adding/removing ${unit})`);
+    }
+    console.log("");
+}
+
 const nonOptionArgs = Deno.args.filter(arg => !arg.startsWith("-"));
 const argCount = nonOptionArgs.length;
 if (argCount === 1) {
@@ -77,6 +88,9 @@ if (argCount === 1) {
     const hasAnalyzeFlag = hasFlag("a", "analyze");
     const hasUsageReportFlag = hasFlag("u", "usage");
     const addDaysValue = getFlagValue("ad", "add-days");
+    const addHoursValue = getFlagValue("ah", "add-hours");
+    const addMinutesValue = getFlagValue("am", "add-minutes");
+    const addSecondsValue = getFlagValue("as", "add-seconds");
     console.log("");
     if (hasAnalyzeFlag || hasUsageReportFlag) {
         console.log("Performing file analysis...");
@@ -88,18 +102,17 @@ if (argCount === 1) {
             logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag // usage report benefits from this info, but it may have perf implications
         }
         await readFileContents("file", filePath, logOpts);
-    } else if (addDaysValue) {
-        const daysToAdd = parseInt(addDaysValue);
+    } else if (addDaysValue || addHoursValue || addMinutesValue || addSecondsValue) {
+        const daysToAdd = addDaysValue ? parseInt(addDaysValue) : 0;
+        const hoursToAdd = addHoursValue ? parseInt(addHoursValue) : 0;
+        const minutesToAdd = addMinutesValue ? parseInt(addMinutesValue) : 0;
+        const secondsToAdd = addSecondsValue ? parseInt(addSecondsValue) : 0;
         console.log("Adjusting date on specific file(s)...");
-        if (daysToAdd > 0) {
-            console.log(`  (adding days: ${daysToAdd})`);
-        } else if (daysToAdd < 0) {
-            console.log(`  (removing days: ${-daysToAdd})`);
-        } else {
-            console.log(`  (not adding/removing days)`);
-        }
-        console.log("");
-        await modifyDatesInFolderOrFile(filePath, daysToAdd);
+        logMessageForUnitToAdd("days", daysToAdd);
+        logMessageForUnitToAdd("hours", hoursToAdd);
+        logMessageForUnitToAdd("minutes", minutesToAdd);
+        logMessageForUnitToAdd("seconds", secondsToAdd);
+        await modifyDatesInFolderOrFile(filePath, daysToAdd, hoursToAdd, minutesToAdd, secondsToAdd);
     } else {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
