@@ -60,3 +60,16 @@ Deno.test({
     },
 });
 
+Deno.test({
+    name: "addSecondsToDate() - add (exceed 60 seconds)",
+    fn: async () => {
+        const date = new Date(2019, 5, 3, 10, 39, 55, 199);
+        const seconds = 6;
+
+        // act
+        const actual = dateUtil.addSecondsToDate(date, seconds);
+
+        // assert
+        assertEquals(actual, new Date(2019, 5, 3, 10, 40, 1, 199));
+    },
+});

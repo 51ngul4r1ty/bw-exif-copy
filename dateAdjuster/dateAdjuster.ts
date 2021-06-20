@@ -18,9 +18,9 @@ export async function modifyDatesInFolderOrFile(fileOrFolderPath: string, daysTo
             const dateTime = fileContents.exifTableData?.standardFields.date?.dateTime;
             if (dateTime) {
                 let newDateTime = addDaysToDate(dateTime, daysToAdd);
-                newDateTime = addHoursToDate(dateTime, hoursToAdd);
-                newDateTime = addMinutesToDate(dateTime, minutesToAdd);
-                newDateTime = addSecondsToDate(dateTime, secondsToAdd);
+                newDateTime = addHoursToDate(newDateTime, hoursToAdd);
+                newDateTime = addMinutesToDate(newDateTime, minutesToAdd);
+                newDateTime = addSecondsToDate(newDateTime, secondsToAdd);
                 console.log(`File date/time was: ${dateTime}, updated to ${newDateTime}`);
                 const includeTrailingNull = true;
                 const success = await writeFileContentsWithBackup(
