@@ -19,7 +19,9 @@ export interface CollectExifTargetFileDataResult {
 export const collectExifTargetFileData = async (folderPath: string): Promise<CollectExifTargetFileDataResult> => {
     let errorMessage = "";
     let targetFileInfo: TargetFileInfo[] = [];
-    const cacheData = await readFromCacheFile(path.resolve(CACHE_FILE_NAME));
+    const cacheFilePath = path.resolve(CACHE_FILE_NAME);
+    console.log(`Cache file path: ${cacheFilePath}`);
+    const cacheData = await readFromCacheFile(cacheFilePath);
     const cacheCurrent = cacheData ? await isCacheCurrent(cacheData) : false;
     if (cacheData) {
         if (cacheCurrent) {

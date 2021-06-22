@@ -2,10 +2,10 @@
 import { readFileContents, writeFileContentsWithBackup } from "../fileReaderWriter.ts";
 import { EXIF_DATETIME_ORIGINAL, EXIF_DATETIME_DIGITIZED, EXIF_DATE_DATETIME_TAG_NUMBER } from "../jpeg/tagNumbers.ts";
 import { dateToExifString } from "../utils/conversionUtil.ts";
-import { addDaysToDate } from "../utils/dateUtil.ts";
+import { addDaysToDate, addHoursToDate, addMinutesToDate, addSecondsToDate } from "../utils/dateUtil.ts";
 import { isValidFile } from "../utils/fileUtil.ts";
 
-export async function modifyDatesInFolderOrFile(fileOrFolderPath: string, daysToAdd: number) {
+export async function modifyDatesInFolderOrFile(fileOrFolderPath: string, daysToAdd: number, hoursToAdd: number, minutesToAdd: number, secondsToAdd: number) {
     let updatedCount = 0;
     let fileCount = 0;
 
@@ -17,7 +17,10 @@ export async function modifyDatesInFolderOrFile(fileOrFolderPath: string, daysTo
             const fileContents = await readFileContents(dirEntry.name, filePath);
             const dateTime = fileContents.exifTableData?.standardFields.date?.dateTime;
             if (dateTime) {
-                const newDateTime = addDaysToDate(dateTime, daysToAdd);
+                let newDateTime = addDaysToDate(dateTime, daysToAdd);
+                newDateTime = addHoursToDate(newDateTime, hoursToAdd);
+                newDateTime = addMinutesToDate(newDateTime, minutesToAdd);
+                newDateTime = addSecondsToDate(newDateTime, secondsToAdd);
                 console.log(`File date/time was: ${dateTime}, updated to ${newDateTime}`);
                 const includeTrailingNull = true;
                 const success = await writeFileContentsWithBackup(
