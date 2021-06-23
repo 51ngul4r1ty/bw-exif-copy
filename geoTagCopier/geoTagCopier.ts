@@ -106,7 +106,6 @@ export const copyGeoTagsToTargetFolder = async (sourceFilePath: string, targetFi
                 }
             }
 
-            // const sortedTargetFiles = targetFileResult.imageFileInfo.sort((a, b) => a.dateTime!.getTime() - b.dateTime!.getTime());
             sortedImageFiles.forEach(imageFileInfo => {
                 const trackPointInfo = imageFileInfo.trackPoint ? formatTrackPoint(imageFileInfo.trackPoint) : "";
                 console.log(`${imageFileInfo.filePath}: ${imageFileInfo.dateTime} - ${trackPointInfo}`);
