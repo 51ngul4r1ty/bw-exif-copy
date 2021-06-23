@@ -1,6 +1,7 @@
 // utils
 import { collectExifTargetFileData } from "./exifTargetFileDataCollector.ts";
 import { readGpxFileContents, TrackPoint } from "./gpxFileReader.ts";
+import { TargetFileInfo } from "./types.ts";
 
 export const dateTimeValue = (dateTime: Date | undefined) => {
     if (!dateTime) { 
@@ -8,6 +9,12 @@ export const dateTimeValue = (dateTime: Date | undefined) => {
     }
     return dateTime.getTime();
 };
+
+export interface GpsImageFileInfo extends TargetFileInfo {
+    trackPoint?: TrackPoint;
+}
+
+export const formatTrackPoint = (trackPoint: TrackPoint): string => `LAT:${trackPoint.latitude} LONG:${trackPoint.longitude} EL:${trackPoint.elevation}`;
 
 export const copyGeoTagsToTargetFolder = async (sourceFilePath: string, targetFilePath: string) => {
     const gpxSourceFile = await readGpxFileContents(sourceFilePath);
@@ -25,7 +32,11 @@ export const copyGeoTagsToTargetFolder = async (sourceFilePath: string, targetFi
             console.log(`ERROR: "${gpxSourceFile}" could not be parsed.  See errors below:`);
             console.log(gpxSourceFile.errorMessage);
         } else {
-            const sortedImageFiles = targetFileResult.targetFileInfo.sort((a, b) => dateTimeValue(a.dateTime) - dateTimeValue(b.dateTime));
+            const targetFiles = targetFileResult.targetFileInfo.sort((a, b) => dateTimeValue(a.dateTime) - dateTimeValue(b.dateTime));
+            const sortedImageFiles = targetFiles.map(targetFile => ({
+                filePath: targetFile.filePath,
+                dateTime: targetFile.dateTime
+            } as GpsImageFileInfo));
             let trackPointIdx = 0;
             let imageFileIdx = 0;
             let prevTrackPoint: TrackPoint | null = null;
@@ -70,6 +81,7 @@ export const copyGeoTagsToTargetFolder = async (sourceFilePath: string, targetFi
                             if (inRange) {
                                 console.log(`found item: ${imageFile.dateTime} in range ${rangeStart} to ${trackPoint.time}`);
                                 foundItemCount++;
+                                imageFile.trackPoint = trackPoint;
                             } else {
                                 console.log(`item not found: ${imageFile.dateTime} not close to range start - ${timeRange / 1000} seconds difference`);
                             }
@@ -96,7 +108,8 @@ export const copyGeoTagsToTargetFolder = async (sourceFilePath: string, targetFi
 
             // const sortedTargetFiles = targetFileResult.imageFileInfo.sort((a, b) => a.dateTime!.getTime() - b.dateTime!.getTime());
             sortedImageFiles.forEach(imageFileInfo => {
-                console.log(`${imageFileInfo.filePath}: ${imageFileInfo.dateTime}`);
+                const trackPointInfo = imageFileInfo.trackPoint ? formatTrackPoint(imageFileInfo.trackPoint) : "";
+                console.log(`${imageFileInfo.filePath}: ${imageFileInfo.dateTime} - ${trackPointInfo}`);
             });
 
             if (foundItemCount === 0) {
