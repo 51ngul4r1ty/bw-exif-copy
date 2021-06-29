@@ -3,6 +3,7 @@ import { fs } from "./deps.ts";
 
 // utils
 import { overlayMetaDataFields } from "./exifOverwriter/exifOverwriter.ts";
+import { ExifDecodedPart } from "./jpeg/exifBufferDecoderTypes.ts";
 import { ExifOrientation, ExifTableData } from "./jpeg/exifFormatTypes.ts";
 import { orientationToNumber } from "./jpeg/exifTagValueConverters.ts";
 import { extract } from "./jpeg/extractor.ts";
@@ -37,6 +38,7 @@ export interface FileData {
     extraBlocks: FileMarkerData[];
     trailingData: TrailingFileData | null;
     exifTableData: ExifTableData | null;
+    exifParts: ExifDecodedPart<any>[] | null;
 }
 
 export async function readFileContents(descrip: string, filePath: string, logOpts: ExtractLogOptions = {}): Promise<FileData> {
@@ -55,7 +57,8 @@ export async function readFileContents(descrip: string, filePath: string, logOpt
         extraBlocks: jpegDecoded.extraBlocks,
         trailingData: null,
         fullExifMetaData: jpegDecoded.fullExifMetaData,
-        exifTableData: jpegDecoded.exifTableData
+        exifTableData: jpegDecoded.exifTableData,
+        exifParts: jpegDecoded.exifParts
     }
     if (jpegDecoded.trailingData?.data) {
         result.trailingData = {
@@ -69,6 +72,7 @@ export async function readFileContents(descrip: string, filePath: string, logOpt
 export interface WriteOptions {
     removeExif?: boolean;
     removePostEoiData?: boolean;
+    testWithNoOverwrite?: boolean;
 }
 
 export function getUint16Bytes(val: number): number[] {
@@ -251,7 +255,8 @@ export async function writeFileContents(filePath: string, fileData: FileData, wr
 export async function writeFileContentsWithBackup(filePath: string, fileData: FileData, writeOptions: WriteOptions, exifMetaDataToOverwriteWith?: Uint8Array | null, logStageInfo?: boolean | null, tagsToModify?: TagNumberAndValue<any>[]) {
     const backupFilePath = filePath + ".exif-copy.bak";
     const hasBackupFile = fs.existsSync(backupFilePath);
-    if (hasBackupFile) {
+    const testWithNoOverwrite = writeOptions.testWithNoOverwrite || false;
+    if (!testWithNoOverwrite && hasBackupFile) {
         return false;
     }
 
@@ -259,8 +264,10 @@ export async function writeFileContentsWithBackup(filePath: string, fileData: Fi
 
     await writeFileContents(outputFilePath, fileData, writeOptions, exifMetaDataToOverwriteWith, logStageInfo, tagsToModify);
 
-    Deno.rename(filePath, backupFilePath);
-    Deno.rename(outputFilePath, filePath);
+    if (!testWithNoOverwrite) {
+        Deno.rename(filePath, backupFilePath);
+        Deno.rename(outputFilePath, filePath);
+    }
 
     return true;
 }

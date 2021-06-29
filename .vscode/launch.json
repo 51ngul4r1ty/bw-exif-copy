@@ -121,6 +121,28 @@
             "attachSimplePort": 9229
         },
         {
+            "name": "Launch App (7)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "--update-latitude=33.1581476",
+                "--update-longitude=-83.1161668",
+                "--update-elevation=348.66729608457536",
+                "/Users/kevin/Pictures/Unprocessed Photos/2021-06-06/temp2/DSC09127.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
             "name": "Tests",
             "request": "launch",
             "type": "pwa-node",
@@ -165,6 +187,23 @@
                 "--unstable",
                 "--filter",
                 "same point test"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
+            "name": "Tests (filtered 3)",
+            "request": "launch",
+            "type": "pwa-node",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "test",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable",
+                "--filter",
+                "exifBufferBuilder"
             ],
             "outputCapture": "std",
             "attachSimplePort": 9229

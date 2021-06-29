@@ -46,7 +46,7 @@ export class ExifBuffer {
             throw new Error("Unexpected condition: getDataForExifPart should only be called after processing data but startingOffset is null!");
         }
         return {
-            rawExifData: this.buffer.subarray(this.startingOffset, this.offsetCursor - this.startingOffset),
+            rawExifData: this.buffer.subarray(this.startingOffset, this.offsetCursor),
             startOffset: this.startingOffset,
             finishOffset: this.offsetCursor
         }

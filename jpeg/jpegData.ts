@@ -1,3 +1,4 @@
+import { ExifDecodedPart } from "./exifBufferDecoderTypes.ts";
 import { ExifTableData } from "./exifFormatTypes.ts";
 import { FileMarkerData } from "./jpegParsingTypes.ts";
 
@@ -16,4 +17,5 @@ export interface JpegData {
     } | null,
     fullExifMetaData: Uint8Array | null;
     exifTableData: ExifTableData | null;
+    exifParts: ExifDecodedPart<any>[] | null;
 }

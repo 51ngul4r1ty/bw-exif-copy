@@ -32,7 +32,8 @@ export function extract(
         extraBlocks: [],
         fullExifMetaData: null,
         trailingData: null,
-        exifTableData: null
+        exifTableData: null,
+        exifParts: null
     };
     let defaultOpts: ExtractUserOptions = {
         // "undefined" means "Choose whether to transform colors based on the image’s color model."
@@ -95,6 +96,11 @@ export function extract(
                 result.metaData.yDensity = jfifResolutionMetaData.yDensity;
                 result.metaData.densityUnits = jfifResolutionMetaData.densityUnits;
             }
+        }
+        if (exifDecoded.exifParts) {
+            result.exifParts = exifDecoded.exifParts;
+        } else {
+            result.exifParts = null;
         }
 
         let channels = opts.formatAsRGBA ? 4 : 3;

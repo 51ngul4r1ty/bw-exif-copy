@@ -39,13 +39,20 @@ export function processTiffHeader(
             );
         }
     }
-    const validTiff =
-        (byteOrder === TiffByteOrder.Intel &&
-            exifBuffer.getBufferByte(2) === 0x2a &&
-            exifBuffer.getBufferByte(3) === 0x00) ||
-        (byteOrder === TiffByteOrder.Motorola &&
-            exifBuffer.getBufferByte(2) === 0x00 &&
-            exifBuffer.getBufferByte(3) === 0x2a);
+    let bufferByte2: number;
+    let bufferByte3: number;
+    const intelByteOrder = byteOrder === TiffByteOrder.Intel;
+    const motorolaByteOrder = byteOrder === TiffByteOrder.Motorola;
+    if (intelByteOrder || motorolaByteOrder) {
+        bufferByte2 = exifBuffer.getBufferByte(2);
+        bufferByte3 = exifBuffer.getBufferByte(3);
+    } else {
+        bufferByte2 = -1;
+        bufferByte3 = -1;
+    }
+    const validIntelByteOrderTiff = intelByteOrder && bufferByte2 === 0x2a && bufferByte3 === 0x00;
+    const validMotorolaByteOrderTiff = motorolaByteOrder && bufferByte2 === 0x00 && bufferByte3 === 0x2a;
+    const validTiff = validIntelByteOrderTiff || validMotorolaByteOrderTiff;
     const firstIfdOffset = tiffBytesToValue(
         byteOrder,
         exifBuffer.getBufferByte(4),

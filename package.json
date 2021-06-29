@@ -23,7 +23,9 @@
     "dump:modified": "npm start -- -u ./test-data/DSC08303-Modified.JPG",
     "dump:modified-original": "npm start -- -u ./test-data/DSC08303-Modified-Original.JPG",
     "dump:original": "npm start -- -u ./test-data/DSC08303-Original.JPG",
-    "test:copy": "npm start -- ./test-data/DSC08303-Original.JPG ./test-data/DSC08303-Modified.JPG"
+    "test:copy": "npm start -- ./test-data/DSC08303-Original.JPG ./test-data/DSC08303-Modified.JPG",
+    "test:geotag": "npm start -- --update-latitude=33.1581476 --update-longitude=-83.1161668 --update-elevation=348.66729608457536 /Users/kevin/Pictures/Unprocessed\\ Photos/2021-06-06/temp2/DSC09127.JPG",
+    "test:analyze": "npm start -- --analyze /Users/kevin/Pictures/Unprocessed\\ Photos/2021-06-06/temp2/DSC09127.JPG"
   },
   "author": "",
   "license": "BSD-3-Clause",

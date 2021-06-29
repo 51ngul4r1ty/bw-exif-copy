@@ -5,6 +5,7 @@ import { fs, osPaths, path } from "./deps.ts";
 import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
 import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
 import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
+import { modifyGeoTagsInFolderOrFile } from "./geoTagUpdater/geoTagUpdater.ts";
 
 console.log("");
 console.log("Berryware Exif Copy v1.2.1");
@@ -91,6 +92,9 @@ if (argCount === 1) {
     const addHoursValue = getFlagValue("ah", "add-hours");
     const addMinutesValue = getFlagValue("am", "add-minutes");
     const addSecondsValue = getFlagValue("as", "add-seconds");
+    const updateLatitudeValue = getFlagValue("ula", "update-latitude");
+    const updateLongitudeValue = getFlagValue("ulo", "update-longitude");
+    const updateElevationValue = getFlagValue("uel", "update-elevation");
     console.log("");
     if (hasAnalyzeFlag || hasUsageReportFlag) {
         console.log("Performing file analysis...");
@@ -113,6 +117,9 @@ if (argCount === 1) {
         logMessageForUnitToAdd("minutes", minutesToAdd);
         logMessageForUnitToAdd("seconds", secondsToAdd);
         await modifyDatesInFolderOrFile(filePath, daysToAdd, hoursToAdd, minutesToAdd, secondsToAdd);
+    } else if (updateLatitudeValue && updateLongitudeValue && updateElevationValue) {
+        console.log("Updating geotags on specified file(s)...");
+        await modifyGeoTagsInFolderOrFile(filePath, parseFloat(updateLatitudeValue), parseFloat(updateLongitudeValue), parseFloat(updateElevationValue));
     } else {
         console.log("INFO: One arg passed at command line and no options (\"--analyze\" / \"-a\" AND/OR \"--usage\" / \"-u\") provided.");
     }
@@ -159,12 +166,14 @@ if (argCount === 1) {
     console.log("  2) A single argument for file to analyze plus one option (a/analyze or u/usage).");
     console.log("  3) 2 arguments for source GPX file and target folder.")
     console.log("  4) A single argument for folder to update plus option to add days to date (ad/add-days={number}).")
+    console.log("  5) A single argument for file to update plus option to update GEO tags (ula/update-latitude={number}, ulo/update-longitude={number}, uel/update-elevation={number}).")
     console.log("");
     console.log("For example,");
     console.log("  1) use `bw-exif-copy ./sourceFolder/file1.jpg ./targetFolder/file2.jpg`");
     console.log("  2) use `bw-exif-copy --analyze ./sourceFolder/file1.jpg`");
     console.log("  3) use `bw-exif-copy ./sourceFolder/geotag-log.gpx ./targetFolder")
     console.log("  4) use `bw-exif-copy --add-days=-1 ./targetFolder")
+    console.log("  5) use `bw-exif-copy -ula=33.26034466914631 -ulo=-83.11542382523666 -uel=259.14952848362597 ./targetFolder/file2.jpg")
     console.log("");
     console.log("NOTE: bw-exif-copy will create a backup file with the extension `.exif-copy.bak` so that you can restore the original.");
 }
