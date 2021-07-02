@@ -73,6 +73,7 @@ export interface WriteOptions {
     removeExif?: boolean;
     removePostEoiData?: boolean;
     testWithNoOverwrite?: boolean;
+    skipRotationReserveLogic?: boolean;
 }
 
 export function getUint16Bytes(val: number): number[] {
@@ -241,13 +242,18 @@ export async function writeFileContents(filePath: string, fileData: FileData, wr
     const imageWidth = fileData.exifTableData?.standardFields.image?.pixelWidth || 0;
     const imageLength = fileData.exifTableData?.standardFields.image?.pixelHeight || 0;
     const tagEachIfdEntry = false; // at this time this isn't relevant unless you're doing analysis of metadata
-    let tagsToPreserve: TagNumberAndValue<any>[] = [
-        { tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue },
-        { tagNumber: EXIF_IMAGE_WIDTH_TAG_NUMBER, value: imageWidth },
-        { tagNumber: EXIF_IMAGE_HEIGHT_TAG_NUMBER, value: imageLength }
-    ];
-    tagsToPreserve = tagsToPreserve.concat(tagsToModify || []);
-    const mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, tagsToPreserve, tagEachIfdEntry);
+    let mergedMetaData: Uint8Array | null = null;
+    if (!writeOptions.skipRotationReserveLogic) {
+        let tagsToPreserve: TagNumberAndValue<any>[] = [
+            { tagNumber: EXIF_IMAGE_ORIENTATION_TAG_NUMBER, value: orientationValue },
+            { tagNumber: EXIF_IMAGE_WIDTH_TAG_NUMBER, value: imageWidth },
+            { tagNumber: EXIF_IMAGE_HEIGHT_TAG_NUMBER, value: imageLength }
+        ];
+        tagsToPreserve = tagsToPreserve.concat(tagsToModify || []);
+        mergedMetaData = overlayMetaDataFields(exifMetaDataToOverwriteWith || null, tagsToPreserve, tagEachIfdEntry);
+    } else {
+        mergedMetaData = exifMetaDataToOverwriteWith || null;
+    }
     const byteArray = convertFileDataToByteArray(fileData, !!writeOptions.removeExif, !!writeOptions.removePostEoiData, null, mergedMetaData, logStageInfo);
     await Deno.writeFile(filePath, byteArray);
 }

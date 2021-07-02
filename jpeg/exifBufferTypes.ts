@@ -41,6 +41,13 @@ export class ExifBuffer {
     markRangeWithUsageData(trueStartingOffset: number, length: number, tags: string[]) {
         this.usageTracker.addUsageBlock(trueStartingOffset, trueStartingOffset + length - 1, true, tags);
     }
+    getDataForExifPartInRange(startIdx: number, endIdx: number) {
+        return {
+            rawExifData: this.buffer.subarray(startIdx, endIdx),
+            startOffset: startIdx,
+            finishOffset: endIdx
+        }
+    }
     getDataForExifPart() {
         if (this.startingOffset === null) {
             throw new Error("Unexpected condition: getDataForExifPart should only be called after processing data but startingOffset is null!");

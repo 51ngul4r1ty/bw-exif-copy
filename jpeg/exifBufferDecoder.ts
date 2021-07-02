@@ -9,6 +9,7 @@ import { HtmlFileWriter } from "../presenter/htmlFileWriter.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
+import { EXIF_PART_NAME_EXIF_HEADER_BLOCK, EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_EXIF_OFFSET_SPACER, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_GPS_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
 
 // interfaces/types
 import { ExifBuffer } from "./exifBufferTypes.ts";
@@ -51,7 +52,7 @@ export function decodeExifBuffer(
         /* Process Exif Header */
         processExifHeader(exifBuffer);
         exifDecodedResult.exifParts.push({
-            name: "EXIF Header Block",
+            name: EXIF_PART_NAME_EXIF_HEADER_BLOCK,
             type: ExifDecodedPartType.ExifHeader,
             data: exifBuffer.getDataForExifPart(),
         });
@@ -63,7 +64,7 @@ export function decodeExifBuffer(
         const tiffHeaderResult = processTiffHeader(exifBuffer);
         byteOrder = tiffHeaderResult.byteOrder;
         const tiffHeaderExifPart: ExifDecodedPart<TiffHeaderPartTypeData> = {
-            name: "TIFF Header Block",
+            name: EXIF_PART_NAME_TIFF_HEADER_BLOCK,
             type: ExifDecodedPartType.TiffHeader,
             data: {
                 ...exifBuffer.getDataForExifPart(),
@@ -81,7 +82,7 @@ export function decodeExifBuffer(
             nextIfdOffset: ifdResult.nextIfdOffset
         } 
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-            name: "First IFD Block",
+            name: EXIF_PART_NAME_FIRST_IFD_BLOCK,
             type: ExifDecodedPartType.ImageFileDirectory,
             data: {
                 ...exifBuffer.getDataForExifPart(),
@@ -103,6 +104,32 @@ export function decodeExifBuffer(
     }
 
     const exifOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.exifOffset;
+
+    // BUSY HERE - need to add block before FF E2 00 A7 4D (it starts with 00 00 F4 01 00 00 3F in source file)
+    {
+        let totalSpaceBefore = 0;
+        let exifHeaderPart: ExifDecodedPart<any> = undefined as unknown as ExifDecodedPart<any>;
+        exifDecodedResult.exifParts.forEach(exifPart => {
+            if (exifPart.name === EXIF_PART_NAME_EXIF_HEADER_BLOCK) {
+                exifHeaderPart = exifPart;
+            }
+            if (exifPart.data) {
+                totalSpaceBefore += exifPart.data.rawExifData.length;
+            }
+        });
+        const exifHeaderSize = exifHeaderPart?.data.rawExifData.length || 0;
+        const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, (exifOffsetRawValue || 0) + exifHeaderSize);
+        const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
+            name: EXIF_PART_NAME_EXIF_OFFSET_SPACER,
+            type: ExifDecodedPartType.Spacer,
+            data: {
+                ...dataForExifPart,
+                ...ifdData
+            }
+        };
+        exifDecodedResult.exifParts.push(exifPart);
+    }
+
     if (exifOffsetRawValue) {
         let extendedExifIfdResult: IfdResult; 
 
@@ -125,7 +152,7 @@ export function decodeExifBuffer(
             const dataForExifPart = exifBuffer.getDataForExifPart();
 
             const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-                name: "EXIF IFD Block",
+                name: EXIF_PART_NAME_EXIF_IFD_BLOCK,
                 type: ExifDecodedPartType.ImageFileDirectory,
                 data: {
                     ...dataForExifPart,
@@ -168,7 +195,7 @@ export function decodeExifBuffer(
         const dataForExifPart = exifBuffer.getDataForExifPart();
 
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-            name: "GPS IFD Block",
+            name: EXIF_PART_NAME_GPS_IFD_BLOCK,
             type: ExifDecodedPartType.ImageFileDirectory,
             data: {
                 ...dataForExifPart,

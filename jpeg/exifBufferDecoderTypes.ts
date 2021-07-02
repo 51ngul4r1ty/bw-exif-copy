@@ -4,7 +4,8 @@ import { ExifTableData } from "./exifFormatTypes.ts";
 export enum ExifDecodedPartType {
     ExifHeader,
     TiffHeader,
-    ImageFileDirectory
+    ImageFileDirectory,
+    Spacer
 }
 
 export interface ExifDecodedPart<T extends BaseDecodedPartData> {

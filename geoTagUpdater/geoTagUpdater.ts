@@ -14,5 +14,14 @@ export async function modifyGeoTagsInFolderOrFile(fileOrFolderPath: string, upda
         { tagNumber: EXIF_GPS_LONGITUDE, value: updateLongitudeValue },
         { tagNumber: EXIF_GPS_ALTITUDE, value: updateElevationValue }
     ]);
-    await writeFileContentsWithBackup(filePath, fileContents, { removeExif: false, removePostEoiData: false, testWithNoOverwrite: true }, modifiedExifMetaData);
+    await writeFileContentsWithBackup(
+        filePath, fileContents,
+        {
+            removeExif: false,
+            removePostEoiData: false,
+            testWithNoOverwrite: true,
+            skipRotationReserveLogic: true
+        },
+        modifiedExifMetaData
+    );
 };
