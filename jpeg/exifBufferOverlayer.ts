@@ -10,6 +10,7 @@ import { cloneUint18Array } from "../misc/jsUtils.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
+import { EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
 
 // interfaces/types
 import { ExifBuffer } from "./exifBufferTypes.ts";
@@ -67,7 +68,7 @@ export function overlayExifBuffer(
         const tiffHeaderResult = processTiffHeader(exifBuffer);
         byteOrder = tiffHeaderResult.byteOrder;
         const tiffHeaderExifPart: ExifDecodedPart<TiffHeaderPartTypeData> = {
-            name: "TIFF Header Block",
+            name: EXIF_PART_NAME_TIFF_HEADER_BLOCK,
             type: ExifDecodedPartType.TiffHeader,
             data: {
                 ...exifBuffer.getDataForExifPart(),
@@ -84,7 +85,7 @@ export function overlayExifBuffer(
             nextIfdOffset: ifdResult.nextIfdOffset
         } 
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-            name: "First IFD Block",
+            name: EXIF_PART_NAME_FIRST_IFD_BLOCK,
             type: ExifDecodedPartType.ImageFileDirectory,
             data: {
                 ...exifBuffer.getDataForExifPart(),
@@ -127,7 +128,7 @@ export function overlayExifBuffer(
             const dataForExifPart = exifBuffer.getDataForExifPart();
 
             const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-                name: "EXIF IFD Block",
+                name: EXIF_PART_NAME_EXIF_IFD_BLOCK,
                 type: ExifDecodedPartType.ImageFileDirectory,
                 data: {
                     ...dataForExifPart,
@@ -175,9 +176,7 @@ export function overlayExifBuffer(
                 ...ifdData
             },
         };
-    }
 
-    {
         exifTableData = supplementExifTableData(
             exifTableData,
             exifBuffer,

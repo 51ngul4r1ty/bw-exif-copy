@@ -10,7 +10,7 @@ import { buildTagFromBlockName } from "./tagNameUtils.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
-import { EXIF_PART_NAME_EXIF_HEADER_BLOCK, EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_EXIF_OFFSET_SPACER, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_GPS_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
+import { EXIF_PART_NAME_EXIF_FINAL_SPACER, EXIF_PART_NAME_EXIF_HEADER_BLOCK, EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_EXIF_OFFSET_SPACER, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_GPS_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
 
 // interfaces/types
 import { ExifBuffer } from "./exifBufferTypes.ts";
@@ -111,21 +111,26 @@ export function decodeExifBuffer(
         );
     }
 
-    const exifOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.exifOffset;
-
-    // BUSY HERE - need to add block before FF E2 00 A7 4D (it starts with 00 00 F4 01 00 00 3F in source file)
+    let exifHeaderSize = 0;
     {
-        let totalSpaceBefore = 0;
         let exifHeaderPart: ExifDecodedPart<any> = undefined as unknown as ExifDecodedPart<any>;
         exifDecodedResult.exifParts.forEach(exifPart => {
             if (exifPart.name === EXIF_PART_NAME_EXIF_HEADER_BLOCK) {
                 exifHeaderPart = exifPart;
             }
+        });
+        exifHeaderSize = exifHeaderPart?.data.rawExifData.length || 0;
+    }
+
+    const exifOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.exifOffset;
+
+    {
+        let totalSpaceBefore = 0;
+        exifDecodedResult.exifParts.forEach(exifPart => {
             if (exifPart.data) {
                 totalSpaceBefore += exifPart.data.rawExifData.length;
             }
         });
-        const exifHeaderSize = exifHeaderPart?.data.rawExifData.length || 0;
         const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, (exifOffsetRawValue || 0) + exifHeaderSize);
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
             name: EXIF_PART_NAME_EXIF_OFFSET_SPACER,
@@ -182,8 +187,14 @@ export function decodeExifBuffer(
         );
     }
 
+    // BUSY HERE - need to add block before FF E2 00 A7 4D (it starts with 00 00 F4 01 00 00 3F in source file)
+    //           - there are 5 parts and this missing part is the 6th one
+
     const gpsOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.gpsInfo;
     if (gpsOffsetRawValue) {
+        // TODO: May need to add "spacer" block here to fill in bytes before GPS location?
+        // QUESTIONS: Is GPS offset before or after JPEG thumbnail data in EXIF??
+
         const gpsOffset = gpsOffsetRawValue || 0;
         // const gpsOffset = getRelativeExifOffset("image.gpsInfo", gpsOffsetRawValue, exifOffsetAdjust);
 
@@ -212,9 +223,6 @@ export function decodeExifBuffer(
         };
         exifDecodedResult.exifParts.push(exifPart);
 
-    }
-
-    {
         exifDecodedResult.exifTableData = supplementExifTableData(
             exifDecodedResult.exifTableData,
             exifBuffer,
@@ -223,6 +231,24 @@ export function decodeExifBuffer(
             logExifTagFields,
             logUnknownExifTagFields
         );
+    } else {
+        const nextExifPartOffset = exifBuffer.bufferLength;
+        let totalSpaceBefore = 0;
+        exifDecodedResult.exifParts.forEach(exifPart => {
+            if (exifPart.data) {
+                totalSpaceBefore += exifPart.data.rawExifData.length;
+            }
+        });
+        const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, nextExifPartOffset + exifHeaderSize);
+        const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
+            name: EXIF_PART_NAME_EXIF_FINAL_SPACER,
+            type: ExifDecodedPartType.Spacer,
+            data: {
+                ...dataForExifPart,
+                ...ifdData
+            }
+        };
+        exifDecodedResult.exifParts.push(exifPart);
     }
 
     if (logExifDataDecoded) {
