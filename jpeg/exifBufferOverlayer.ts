@@ -2,7 +2,7 @@
 import { path } from "../deps.ts";
 
 // utils
-import { consoleLogExifBufferUsage } from "./exifParsingDebugger.ts";
+import { outputExifBufferUsage } from "./exifParsingDebugger.ts";
 import { processExifHeader, processTiffHeader } from "./exifBufferDecoderProcessors.ts";
 import { errorLog } from "../misc/errorLog.ts";
 import { HtmlFileWriter } from "../presenter/htmlFileWriter.ts";
@@ -239,7 +239,7 @@ export function overlayExifBuffer(
             { propName: "char15", displayName: "0E" },
             { propName: "char16", displayName: "0F" }
         ])
-        consoleLogExifBufferUsage(exifBuffer, htmlFileWriter);
+        outputExifBufferUsage(exifBuffer, htmlFileWriter);
     }
 
     if (errorLog.hasErrors()) {

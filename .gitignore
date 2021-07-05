@@ -5,3 +5,4 @@ test-data-out
 dist
 output.html
 coverage
+.bw-exif-copy-cache

@@ -81,7 +81,7 @@ interface UsageBlockData {
     used: boolean;
 }
 
-export const consoleLogExifBufferUsage = (exifBuffer: ExifBuffer, fileWriter?: FileWriter) => {
+export const outputExifBufferUsage = (exifBuffer: ExifBuffer, fileWriter?: FileWriter) => {
     const usageBlocks = exifBuffer.usageTracker.getAllUsageBlocks();
     let usageBlockIdx = 0;
     let currentUsageBlock: UsageByteBlock | null = null;

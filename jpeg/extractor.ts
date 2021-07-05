@@ -81,7 +81,8 @@ export function extract(
             logOpts.logExifBufferUsage || false,
             logOpts.logExifTagFields || false,
             logOpts.logUnknownExifTagFields || false,
-            logOpts.tagEachIfdEntry || false
+            logOpts.tagEachIfdEntry || false,
+            logOpts.tagExifPartBlocks || false
         );
         if (exifDecoded.exifTableData) {
             result.exifTableData = exifDecoded.exifTableData;

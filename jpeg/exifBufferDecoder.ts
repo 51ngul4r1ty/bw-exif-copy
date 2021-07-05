@@ -2,10 +2,11 @@
 import { path } from "../deps.ts";
 
 // utils
-import { consoleLogExifBufferUsage } from "./exifParsingDebugger.ts";
+import { outputExifBufferUsage } from "./exifParsingDebugger.ts";
 import { processExifHeader, processTiffHeader } from "./exifBufferDecoderProcessors.ts";
 import { errorLog } from "../misc/errorLog.ts";
 import { HtmlFileWriter } from "../presenter/htmlFileWriter.ts";
+import { buildTagFromBlockName } from "./tagNameUtils.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
@@ -36,7 +37,7 @@ export interface TiffHeaderPartTypeData extends BaseDecodedPartData {
 // NOTE: exifBufferOverlayer.ts has overlayExifBuffer which was essentially copied from this function- it may be good to bring these back together in future.
 export function decodeExifBuffer(
     exifBufferWithHeader: Uint8Array, logExifDataDecoded: boolean, logExifBufferUsage: boolean, logExifTagFields: boolean,
-    logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean
+    logUnknownExifTagFields: boolean, tagEachIfdEntry: boolean, tagExifPartBlocks: boolean
 ): ExifDecoded {
     errorLog.throwErrorImmediately = false;
     const exifDecodedResult: ExifDecoded = {
@@ -51,11 +52,18 @@ export function decodeExifBuffer(
     {
         /* Process Exif Header */
         processExifHeader(exifBuffer);
+        const data = exifBuffer.getDataForExifPart();
+        const name = EXIF_PART_NAME_EXIF_HEADER_BLOCK;
         exifDecodedResult.exifParts.push({
-            name: EXIF_PART_NAME_EXIF_HEADER_BLOCK,
+            name,
             type: ExifDecodedPartType.ExifHeader,
-            data: exifBuffer.getDataForExifPart(),
+            data,
         });
+        if (tagExifPartBlocks) {
+            // TODO: This doesn't work because of a bug related to this data (or more likely the "addUsageBlock" logic).  I've left it in place
+            //       so that I can enable it in future, but for now it doesn't work.
+            exifBuffer.usageTracker.addUsageBlock(data.startOffset, data.finishOffset, false, ['tag-exif-part', buildTagFromBlockName(name)]);
+        }
     }
 
     exifBuffer.setExifCursor();
@@ -267,8 +275,8 @@ export function decodeExifBuffer(
             { propName: "char14", displayName: "0D" },
             { propName: "char15", displayName: "0E" },
             { propName: "char16", displayName: "0F" }
-        ])
-        consoleLogExifBufferUsage(exifBuffer, htmlFileWriter);
+        ]);
+        outputExifBufferUsage(exifBuffer, htmlFileWriter);
     }
 
     if (errorLog.hasErrors()) {

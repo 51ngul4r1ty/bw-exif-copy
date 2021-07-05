@@ -6,6 +6,7 @@ import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
 import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
 import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
 import { modifyGeoTagsInFolderOrFile } from "./geoTagUpdater/geoTagUpdater.ts";
+import { ExtractLogOptions } from "./jpeg/jpegParsingTypes.ts";
 
 console.log("");
 console.log("Berryware Exif Copy v1.2.1");
@@ -87,6 +88,7 @@ const argCount = nonOptionArgs.length;
 if (argCount === 1) {
     const filePath = path.resolve(nonOptionArgs[0]);
     const hasAnalyzeFlag = hasFlag("a", "analyze");
+    const hasAnalyzePartsFlag = hasFlag("p", "parts");
     const hasUsageReportFlag = hasFlag("u", "usage");
     const addDaysValue = getFlagValue("ad", "add-days");
     const addHoursValue = getFlagValue("ah", "add-hours");
@@ -96,14 +98,15 @@ if (argCount === 1) {
     const updateLongitudeValue = getFlagValue("ulo", "update-longitude");
     const updateElevationValue = getFlagValue("uel", "update-elevation");
     console.log("");
-    if (hasAnalyzeFlag || hasUsageReportFlag) {
+    if (hasAnalyzeFlag || hasUsageReportFlag || hasAnalyzePartsFlag) {
         console.log("Performing file analysis...");
         console.log(`  (analyze: ${hasAnalyzeFlag}, usage report: ${hasUsageReportFlag})`);
         console.log("");
-        const logOpts = {
+        const logOpts: ExtractLogOptions = {
             logExifBufferUsage: hasUsageReportFlag, logExifDataDecoded: true,
             logExifTagFields: false, logUnknownExifTagFields: true,
-            logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag // usage report benefits from this info, but it may have perf implications
+            logStageInfo: false, tagEachIfdEntry: hasUsageReportFlag, // usage report benefits from this info, but it may have perf implications
+            tagExifPartBlocks: hasAnalyzePartsFlag
         }
         await readFileContents("file", filePath, logOpts);
     } else if (addDaysValue || addHoursValue || addMinutesValue || addSecondsValue) {
