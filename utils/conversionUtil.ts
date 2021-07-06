@@ -13,3 +13,23 @@ export function dateToExifString(val: Date, includeTrailingNull?: boolean): stri
     const trailingNull = includeTrailingNull ? String.fromCharCode(0) : "";
     return `${datePart} ${timePart}${trailingNull}`;
 }
+
+export interface DegreesMinutesSeconds {
+    degrees: number;
+    minutes: number;
+    seconds: number;
+}
+
+export function floatToDegreesMinsSecs(val: number): DegreesMinutesSeconds {
+    const degrees = Math.trunc(val);
+    const remaining = val - degrees;
+    const remainingInMinutes = remaining * 60;
+    const minutes = Math.trunc(remainingInMinutes);
+    const remainingForSeconds = remainingInMinutes - minutes;
+    const seconds = remainingForSeconds * 60;
+    return {
+        degrees,
+        minutes,
+        seconds
+    }
+}

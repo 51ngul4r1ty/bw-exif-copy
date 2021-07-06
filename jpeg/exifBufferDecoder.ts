@@ -232,6 +232,7 @@ export function decodeExifBuffer(
             logUnknownExifTagFields
         );
     } else {
+        // TODO: Make this work when GPS data is also present (see "BUSY" & "TODO" comments in block above)
         const nextExifPartOffset = exifBuffer.bufferLength;
         let totalSpaceBefore = 0;
         exifDecodedResult.exifParts.forEach(exifPart => {
