@@ -11,11 +11,11 @@ import {
     getUnsignedShort1EltArrayItemFromDataValue,
     getUnsignedShort2EltArrayFromDataValue
 } from "./exifDataFormatUtils.ts";
-// import { searchForDates } from "./exifBufferSearchUtils.ts";
 import {
     formatSignedRationalArray,
     formatToFriendlyName,
-    formatUnsignedRationalArray
+    formatUnsignedRationalArray,
+    friendlyNameToFormat
 } from "./exifFormatUtils.ts";
 
 // interfaces/types
@@ -34,7 +34,6 @@ import {
     FORMAT_UNSIGNED_RATIONAL,
     FORMAT_UNSIGNED_SHORT,
 } from "./exifFormatConsts.ts";
-// import * as tagNumbers from "./tagNumbers.ts";
 
 export enum ValueContainerType {
     None = 0,
@@ -63,53 +62,7 @@ export function getConvertedValuesForDirectoryEntry(
     let valueContainerLength: number | null = null;
     let dataFormatToUse = directoryEntry.dataFormat;
     if (directoryEntry.dataFormat === FORMAT_UNDEFINED) {
-        switch (tagNumberInfo?.format) {
-            case "ascii string": {
-                dataFormatToUse = FORMAT_ASCII_STRINGS;
-                break;
-            }
-            case "unsigned long": {
-                dataFormatToUse = FORMAT_UNSIGNED_LONG;
-                break;
-            }
-            case "unsigned short": {
-                dataFormatToUse = FORMAT_UNSIGNED_SHORT;
-                break;
-            }
-            case "unsigned rational": {
-                dataFormatToUse = FORMAT_UNSIGNED_RATIONAL;
-                break;
-            }
-            case "unsigned rational": {
-                dataFormatToUse = FORMAT_UNSIGNED_RATIONAL;
-                break;
-            }
-            case "signed rational": {
-                dataFormatToUse = FORMAT_SIGNED_RATIONAL;
-                break;
-            }
-            case "unsigned byte": {
-                dataFormatToUse = FORMAT_UNSIGNED_BYTE;
-                break;
-            }
-            case "unsigned short/long": {
-                if (directoryEntry.componentCount > 2) {
-                    // short and long both do not fit in 4 bytes, so just use long because
-                    // it is going to be at an offset position anyway, so there's more space there
-                    dataFormatToUse = FORMAT_UNSIGNED_LONG;
-                } else {
-                    // assume data value fits in 4 bytes
-                    // if it is 1 then it can be a long so use that
-                    // if it is 2 then it can only be a short so use that
-                    dataFormatToUse = directoryEntry.componentCount > 1 ? FORMAT_UNSIGNED_SHORT : FORMAT_UNSIGNED_LONG;
-                }
-                break;
-            }
-            case "undefined": {
-                dataFormatToUse = directoryEntry.componentCount > 1 ? FORMAT_UNSIGNED_BYTE : FORMAT_UNSIGNED_LONG;
-                break;
-            }
-        }
+        dataFormatToUse = friendlyNameToFormat(tagNumberInfo?.format, directoryEntry.componentCount);
     }
     else {
         dataFormatToUse = directoryEntry.dataFormat;
@@ -121,7 +74,6 @@ export function getConvertedValuesForDirectoryEntry(
             stringValue = getStringValueAtOffset(
                 exifBuffer,
                 directoryEntry.dataValueOrOffsetToValue,
-                // exifOffsetAdjust,
                 directoryEntry.componentCount,
                 tags
             );

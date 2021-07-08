@@ -429,7 +429,7 @@ TAG_NUMBER_INFO[EXIF_GPSINFO_DIFFERENTIAL] = {
     compoNo: 1,
     desc: "Indicates whether differential correction is applied to the GPS receiver."
 };
-TAG_NUMBER_INFO[EXIF_GPSINFO_DIFFERENTIAL] = {
+TAG_NUMBER_INFO[EXIF_GPSINFO_VERSION] = {
     name: "GPSVersionID",
     format: "unsigned byte",
     compoNo: 4,

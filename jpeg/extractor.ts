@@ -33,7 +33,8 @@ export function extract(
         fullExifMetaData: null,
         trailingData: null,
         exifTableData: null,
-        exifParts: null
+        exifParts: null,
+        detectedByteOrder: null
     };
     let defaultOpts: ExtractUserOptions = {
         // "undefined" means "Choose whether to transform colors based on the image’s color model."
@@ -84,6 +85,7 @@ export function extract(
             logOpts.tagEachIfdEntry || false,
             logOpts.tagExifPartBlocks || false
         );
+        result.detectedByteOrder = exifDecoded.detectedByteOrder;
         if (exifDecoded.exifTableData) {
             result.exifTableData = exifDecoded.exifTableData;
             const exifImageData = exifDecoded.exifTableData.standardFields.image;

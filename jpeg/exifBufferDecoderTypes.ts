@@ -1,5 +1,6 @@
 // interfaces/types
 import { ExifTableData } from "./exifFormatTypes.ts";
+import { TiffByteOrder } from "./tiffTypes.ts";
 
 export enum ExifDecodedPartType {
     ExifHeader,
@@ -17,6 +18,7 @@ export interface ExifDecodedPart<T extends BaseDecodedPartData> {
 export interface ExifDecoded {
     exifParts: ExifDecodedPart<any>[];
     exifTableData: ExifTableData | null;
+    detectedByteOrder: TiffByteOrder | null;
 }
 
 export interface BaseDecodedPartData {

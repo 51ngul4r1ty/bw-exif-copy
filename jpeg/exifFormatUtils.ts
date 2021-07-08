@@ -58,6 +58,51 @@ export function formatToFriendlyName(format: number): string {
     }
 }
 
+export function friendlyNameToFormat(friendlyFormatName: string, componentCount: number): number {
+    switch (friendlyFormatName) {
+        case "ascii string": {
+            return FORMAT_ASCII_STRINGS;
+        }
+        case "unsigned long": {
+            return FORMAT_UNSIGNED_LONG;
+        }
+        case "unsigned short": {
+            return FORMAT_UNSIGNED_SHORT;
+        }
+        case "unsigned rational": {
+            return FORMAT_UNSIGNED_RATIONAL;
+        }
+        case "unsigned rational": {
+            return FORMAT_UNSIGNED_RATIONAL;
+        }
+        case "signed rational": {
+            return FORMAT_SIGNED_RATIONAL;
+        }
+        case "unsigned byte": {
+            return FORMAT_UNSIGNED_BYTE;
+        }
+        case "unsigned short/long": {
+            if (componentCount > 2) {
+                // short and long both do not fit in 4 bytes, so just use long because
+                // it is going to be at an offset position anyway, so there's more space there
+                return FORMAT_UNSIGNED_LONG;
+            } else {
+                // assume data value fits in 4 bytes
+                // if it is 1 then it can be a long so use that
+                // if it is 2 then it can only be a short so use that
+                return componentCount > 1 ? FORMAT_UNSIGNED_SHORT : FORMAT_UNSIGNED_LONG;
+            }
+        }
+        case "undefined": {
+            return componentCount > 1 ? FORMAT_UNSIGNED_BYTE : FORMAT_UNSIGNED_LONG;
+        }
+        default: {
+            throw new Error(`Unknown friendly format name: "${friendlyFormatName}"`)
+        }
+    }
+
+}
+
 export function formatUnsignedRational(val: ExifRational): string {
     if (val.denominator === 0) {
         return `${val.numerator}`;

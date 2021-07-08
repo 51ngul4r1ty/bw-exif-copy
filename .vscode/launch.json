@@ -143,6 +143,27 @@
             "attachSimplePort": 9229
         },
         {
+            "name": "Launch App (8)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "--analyze",
+                "--parts",
+                "/Users/kevin/Pictures/Unprocessed Photos/2021-06-06/temp2/DSC09127.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
             "name": "Tests",
             "request": "launch",
             "type": "pwa-node",

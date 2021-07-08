@@ -1,3 +1,18 @@
+export enum DataFormat {
+    UnsignedByte = 1,
+    AsciiStrings = 2,
+    UnsignedShort = 3,
+    UnsignedLong = 4,
+    UnsignedRational = 5,
+    SignedByte = 6,
+    Undefined = 7,
+    SignedShort = 8,
+    SignedLong = 9,
+    SignedRational = 10,
+    SingleFloat = 11,
+    DoubleFloat = 12
+}
+
 export interface ExifRational {
     numerator: number;
     denominator: number;

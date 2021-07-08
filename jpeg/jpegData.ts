@@ -1,6 +1,7 @@
 import { ExifDecodedPart } from "./exifBufferDecoderTypes.ts";
 import { ExifTableData } from "./exifFormatTypes.ts";
 import { FileMarkerData } from "./jpegParsingTypes.ts";
+import { TiffByteOrder } from "./tiffTypes.ts";
 
 export interface JpegData {
     metaData: {
@@ -18,4 +19,5 @@ export interface JpegData {
     fullExifMetaData: Uint8Array | null;
     exifTableData: ExifTableData | null;
     exifParts: ExifDecodedPart<any>[] | null;
+    detectedByteOrder: TiffByteOrder | null;
 }

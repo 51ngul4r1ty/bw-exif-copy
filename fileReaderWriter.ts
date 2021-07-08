@@ -10,6 +10,7 @@ import { extract } from "./jpeg/extractor.ts";
 
 // interfaces/types
 import { ExtractLogOptions, FileMarkerData } from "./jpeg/jpegParsingTypes.ts";
+import { TiffByteOrder } from "./jpeg/tiffTypes.ts";
 
 // consts/enums
 import { EXIF_IMAGE_HEIGHT_TAG_NUMBER, EXIF_IMAGE_ORIENTATION_TAG_NUMBER, EXIF_IMAGE_WIDTH_TAG_NUMBER } from "./jpeg/tagNumbers.ts";
@@ -39,6 +40,7 @@ export interface FileData {
     trailingData: TrailingFileData | null;
     exifTableData: ExifTableData | null;
     exifParts: ExifDecodedPart<any>[] | null;
+    detectedByteOrder: TiffByteOrder | null;
 }
 
 export async function readFileContents(descrip: string, filePath: string, logOpts: ExtractLogOptions = {}): Promise<FileData> {
@@ -58,7 +60,8 @@ export async function readFileContents(descrip: string, filePath: string, logOpt
         trailingData: null,
         fullExifMetaData: jpegDecoded.fullExifMetaData,
         exifTableData: jpegDecoded.exifTableData,
-        exifParts: jpegDecoded.exifParts
+        exifParts: jpegDecoded.exifParts,
+        detectedByteOrder: jpegDecoded.detectedByteOrder
     }
     if (jpegDecoded.trailingData?.data) {
         result.trailingData = {

@@ -43,6 +43,7 @@ export function decodeExifBuffer(
     const exifDecodedResult: ExifDecoded = {
         exifParts: [],
         exifTableData: null,
+        detectedByteOrder: null
     };
 
     let exifBuffer = new ExifBuffer(exifBufferWithHeader);
@@ -71,6 +72,7 @@ export function decodeExifBuffer(
         /* Process Tiff Header */
         const tiffHeaderResult = processTiffHeader(exifBuffer);
         byteOrder = tiffHeaderResult.byteOrder;
+        exifDecodedResult.detectedByteOrder = byteOrder;
         const tiffHeaderExifPart: ExifDecodedPart<TiffHeaderPartTypeData> = {
             name: EXIF_PART_NAME_TIFF_HEADER_BLOCK,
             type: ExifDecodedPartType.TiffHeader,

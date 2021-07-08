@@ -1,8 +1,8 @@
 import { TiffByteOrder } from "./tiffTypes.ts";
 
-export function tiffBytesToValue(type: TiffByteOrder, ...bytes: number[]): number {
+export function tiffBytesToValue(byteOrder: TiffByteOrder, ...bytes: number[]): number {
     let result: number = 0;
-    if (type === TiffByteOrder.Intel) {
+    if (byteOrder === TiffByteOrder.Intel) {
         let shiftVal = 0;
         bytes.forEach(byte => {
             result += (byte << shiftVal) >>> 0;
