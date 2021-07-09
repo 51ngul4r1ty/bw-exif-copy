@@ -76,7 +76,8 @@ export function supplementExifTableData(
     byteOrder: TiffByteOrder,
     ifdDirectoryData: ImageFileDirectoryData,
     logExifTagFields: boolean,
-    logUnknownExifTagFields: boolean
+    logUnknownExifTagFields: boolean,
+    exifPartIndex: number | null
 ): ExifTableData {
     let newExifTableData: ExifTableData;
     if (!exifTableData) {
@@ -116,7 +117,8 @@ export function supplementExifTableData(
         newExifTableData.fieldValueLocations[directoryEntry.tagNumber] = {
             offsetStart: convertedValues.offsetStart,
             length: convertedValues.length,
-            containerLength: convertedValues.containerLength
+            containerLength: convertedValues.containerLength,
+            exifPartIndex
         };
         switch (directoryEntry.tagNumber) {
             case EXIF_IMAGE_DESCRIPTION_TAG_NUMBER: {

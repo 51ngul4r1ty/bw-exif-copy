@@ -121,6 +121,7 @@ export const buildModifiedExifMetaData = (
     let newGpsInfoOffset = 0;
     let finalSpacerFound = false;
     let finalSpacerProcessed = false;
+    // BUSY HERE- need to find out how to insert a tag for GPS offset into the main IFD???  (need to find out which IFD should contain it)
     exifParts.forEach(exifPart => {
         if (exifPart.name === EXIF_PART_NAME_EXIF_FINAL_SPACER) {
             finalSpacerFound = true;

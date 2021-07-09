@@ -10,7 +10,7 @@ import { cloneUint18Array } from "../misc/jsUtils.ts";
 
 // consts/enums
 import { USAGE_TAG_IFD_1, USAGE_TAG_IFD_GPSINFO, USAGE_TAG_IFD_RECORD_2_PLUS } from "./exifByteUsageTags.ts";
-import { EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
+import { EXIF_PART_NAME_EXIF_IFD_BLOCK, EXIF_PART_NAME_FIRST_IFD_BLOCK, EXIF_PART_NAME_GPS_IFD_BLOCK, EXIF_PART_NAME_TIFF_HEADER_BLOCK } from "./constants.ts";
 
 // interfaces/types
 import { ExifBuffer } from "./exifBufferTypes.ts";
@@ -56,15 +56,18 @@ export function overlayExifBuffer(
     let exifBuffer = new ExifBuffer(exifBufferWithHeader);
     let byteOrder: TiffByteOrder;
     let ifdData: ImageFileDirectoryData;
+    let exifPartIndex: number | null = null;
 
     {
         /* Process Exif Header */
+        exifPartIndex = 0;
         processExifHeader(exifBuffer);
     }
 
     exifBuffer.setExifCursor();
     {
         /* Process Tiff Header */
+        exifPartIndex = 1;
         const tiffHeaderResult = processTiffHeader(exifBuffer);
         byteOrder = tiffHeaderResult.byteOrder;
         const tiffHeaderExifPart: ExifDecodedPart<TiffHeaderPartTypeData> = {
@@ -79,6 +82,7 @@ export function overlayExifBuffer(
 
     /* Process First IFD Record */
     {
+        exifPartIndex = 2;
         const ifdResult = processImageFileDirectory(exifBuffer, byteOrder, USAGE_TAG_IFD_1, tagEachIfdEntry);
         ifdData = {
             directoryEntries: ifdResult.directoryEntries,
@@ -101,7 +105,8 @@ export function overlayExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     }
 
@@ -113,6 +118,7 @@ export function overlayExifBuffer(
 
         {
             /* Process Next EXIF IFD Record */
+            exifPartIndex = 3;
             exifBuffer.moveCursorToExifOffset(exifOffset);
             extendedExifIfdResult = processImageFileDirectory(
                 exifBuffer,
@@ -145,7 +151,8 @@ export function overlayExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     }
 
@@ -154,6 +161,7 @@ export function overlayExifBuffer(
         const gpsOffset = gpsOffsetRawValue || 0;
 
         /* Process GPS IFD Record */
+        exifPartIndex = 4;
         exifBuffer.moveCursorToExifOffset(gpsOffset);
         const gpsInfoIfdResult = processImageFileDirectory(
             exifBuffer,
@@ -169,7 +177,7 @@ export function overlayExifBuffer(
         const dataForExifPart = exifBuffer.getDataForExifPart();
 
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-            name: "GPS IFD Block",
+            name: EXIF_PART_NAME_GPS_IFD_BLOCK,
             type: ExifDecodedPartType.ImageFileDirectory,
             data: {
                 ...dataForExifPart,
@@ -183,7 +191,8 @@ export function overlayExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     }
 

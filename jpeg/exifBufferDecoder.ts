@@ -49,9 +49,11 @@ export function decodeExifBuffer(
     let exifBuffer = new ExifBuffer(exifBufferWithHeader);
     let byteOrder: TiffByteOrder;
     let ifdData: ImageFileDirectoryData;
+    let exifPartIndex: number | null = null;
 
     {
         /* Process Exif Header */
+        exifPartIndex = 0;
         processExifHeader(exifBuffer);
         const data = exifBuffer.getDataForExifPart();
         const name = EXIF_PART_NAME_EXIF_HEADER_BLOCK;
@@ -70,6 +72,7 @@ export function decodeExifBuffer(
     exifBuffer.setExifCursor();
     {
         /* Process Tiff Header */
+        exifPartIndex = 1;
         const tiffHeaderResult = processTiffHeader(exifBuffer);
         byteOrder = tiffHeaderResult.byteOrder;
         exifDecodedResult.detectedByteOrder = byteOrder;
@@ -86,6 +89,7 @@ export function decodeExifBuffer(
 
     /* Process First IFD Record */
     {
+        exifPartIndex = 2;
         const ifdResult = processImageFileDirectory(exifBuffer, byteOrder, USAGE_TAG_IFD_1, tagEachIfdEntry);
         ifdData = {
             directoryEntries: ifdResult.directoryEntries,
@@ -109,7 +113,8 @@ export function decodeExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     }
 
@@ -152,6 +157,7 @@ export function decodeExifBuffer(
 
         {
             /* Process Next EXIF IFD Record */
+            exifPartIndex = 3;
             exifBuffer.moveCursorToExifOffset(exifOffset);
             extendedExifIfdResult = processImageFileDirectory(
                 exifBuffer,
@@ -185,7 +191,8 @@ export function decodeExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     }
 
@@ -201,6 +208,7 @@ export function decodeExifBuffer(
         // const gpsOffset = getRelativeExifOffset("image.gpsInfo", gpsOffsetRawValue, exifOffsetAdjust);
 
         /* Process GPS IFD Record */
+        exifPartIndex = 4;
         exifBuffer.moveCursorToExifOffset(gpsOffset);
         const gpsInfoIfdResult = processImageFileDirectory(
             exifBuffer,
@@ -231,7 +239,8 @@ export function decodeExifBuffer(
             byteOrder,
             ifdData,
             logExifTagFields,
-            logUnknownExifTagFields
+            logUnknownExifTagFields,
+            exifPartIndex
         );
     } else {
         // TODO: Make this work when GPS data is also present (see "BUSY" & "TODO" comments in block above)

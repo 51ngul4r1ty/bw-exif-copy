@@ -164,6 +164,26 @@
             "attachSimplePort": 9229
         },
         {
+            "name": "Launch App (analyze)",
+            "request": "launch",
+            "type": "pwa-node",
+            "program": "index.ts",
+            "args": [
+                "-a",
+                "./test-data/DSC00744.JPG"
+            ],
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-brk",
+                "--allow-all",
+                "--unstable"
+            ],
+            "outputCapture": "std",
+            "attachSimplePort": 9229
+        },
+        {
             "name": "Tests",
             "request": "launch",
             "type": "pwa-node",

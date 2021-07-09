@@ -177,6 +177,7 @@ export interface FieldValueLocation {
     offsetStart: number | null;
     length: number | null;
     containerLength: number | null;
+    exifPartIndex: number | null;
 }
 
 export interface ExifTableData {
