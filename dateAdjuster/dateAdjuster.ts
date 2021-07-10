@@ -1,6 +1,8 @@
+// consts/enums
+import { EXIF_DATETIME_DIGITIZED, EXIF_DATETIME_ORIGINAL, EXIF_DATE_DATETIME_TAG_NUMBER } from "../exif/common/exifTagNumberConstants.ts";
+
 // utils
-import { readFileContents, writeFileContentsWithBackup } from "../fileReaderWriter.ts";
-import { EXIF_DATETIME_ORIGINAL, EXIF_DATETIME_DIGITIZED, EXIF_DATE_DATETIME_TAG_NUMBER } from "../jpeg/tagNumbers.ts";
+import { readFileContents, writeFileContentsWithBackup } from "../io/fileReaderWriter.ts";
 import { dateToExifString } from "../utils/conversionUtil.ts";
 import { addDaysToDate, addHoursToDate, addMinutesToDate, addSecondsToDate } from "../utils/dateUtil.ts";
 import { isValidFile } from "../utils/fileUtil.ts";

@@ -1,7 +1,8 @@
-import { ExifDecodedPart } from "./exifBufferDecoderTypes.ts";
-import { ExifTableData } from "./exifFormatTypes.ts";
+// interfaces/types
+import { ExifDecodedPart } from "../types/exifBufferDecoderTypes.ts";
+import { ExifTableData } from "../exif/exifBufferUtils/exifFormatTypes.ts";
 import { FileMarkerData } from "./jpegParsingTypes.ts";
-import { TiffByteOrder } from "./tiffTypes.ts";
+import { TiffByteOrder } from "../types/tiffTypes.ts";
 
 export interface JpegData {
     metaData: {

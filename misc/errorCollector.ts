@@ -1,5 +1,5 @@
 // utils
-import { numberToHexString } from "../jpeg/hexUtils.ts";
+import { numberToHexString } from "../utils/hexUtils.ts";
 
 export interface ErrorInfo {
     errorMessage: string;

@@ -1,15 +1,15 @@
 // utils
-import { repeatToLength } from "./exifTagValueFormatters.ts";
+import { repeatToLength } from "../exif/utils/exifTagValueFormatters.ts";
 import {
     buildExifDisplayTable,
     ExifDisplayTableRow,
     ExifDisplayValueStyle
-} from "./exifDisplayUtils.ts";
-import { numberToHexString } from "../jpeg/hexUtils.ts";
-import { formatRational } from "../jpeg/exifFormatUtils.ts";
+} from "../exif/utils/exifDisplayUtils.ts";
+import { numberToHexString } from "../utils/hexUtils.ts";
+import { formatRational } from "../exif/utils/exifFormatUtils.ts";
 
 // interfaces/types
-import { ExifTableData } from "../jpeg/exifFormatTypes.ts";
+import { ExifTableData } from "../exif/exifBufferUtils/exifFormatTypes.ts";
 
 export function consoleLogExifTable(exifTableData: ExifTableData) {
     console.log();

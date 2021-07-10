@@ -1,8 +1,8 @@
 // interfaces/types
-import { ExifRational, ExifResolutionUnit } from "./exifFormatTypes.ts";
+import { ExifRational, ExifResolutionUnit } from "../exif/exifBufferUtils/exifFormatTypes.ts";
 
 // utils
-import { rationalToNumber } from "./exifTagValueConverters.ts";
+import { rationalToNumber } from "../exif/utils/exifTagValueConverters.ts";
 
 export interface JfifResolutionMetaData {
     densityUnits: number;

@@ -1,5 +1,5 @@
 // interfaces/types
-import { ExifRational } from "../jpeg/exifFormatTypes.ts";
+import { ExifRational } from "../exif/exifBufferUtils/exifFormatTypes.ts";
 
 // utils
 import { addLeadingZeros } from "./stringUtil.ts";

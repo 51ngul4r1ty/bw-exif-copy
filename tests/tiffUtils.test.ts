@@ -2,10 +2,10 @@
 import { assertEquals } from "https://deno.land/std@0.85.0/testing/asserts.ts";
 
 // interfaces/types
-import { TiffByteOrder } from "../jpeg/tiffTypes.ts";
+import { TiffByteOrder } from "../types/tiffTypes.ts";
 
 // code under test
-import * as tiffUtils from "../jpeg/tiffUtils.ts";
+import * as tiffUtils from "../utils/tiffUtils.ts";
 
 Deno.test({
     name: "floatToDegreesMinsSecs()- valueToTiffBytes (Intel byte order)",

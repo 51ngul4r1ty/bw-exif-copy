@@ -6,7 +6,7 @@ import { JpegParser } from "./jpegParser.ts";
 import { ExtractLogOptions, ExtractUserOptions } from "./jpegParsingTypes.ts";
 import { JpegData } from "./jpegData.ts";
 import { MemoryManager } from "../misc/memoryManager.ts";
-import { decodeExifBuffer } from "./exifBufferDecoder.ts";
+import { decodeExifBuffer } from "../exif/exifBufferProcessor/exifBufferDecoder.ts";
 import { convertToJfifResolutionMetaData } from "./jfifMetaDataConverters.ts";
 
 // consts/enums

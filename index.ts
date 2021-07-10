@@ -2,10 +2,10 @@
 import { fs, osPaths, path } from "./deps.ts";
 
 // utils
-import { readFileContents, writeFileContents } from "./fileReaderWriter.ts";
-import { copyGeoTagsToTargetFolder } from "./geoTagCopier/geoTagCopier.ts";
+import { readFileContents, writeFileContents } from "./io/fileReaderWriter.ts";
+import { copyGeoTagsToTargetFolder } from "./exif/geoTagCopier/geoTagCopier.ts";
 import { modifyDatesInFolderOrFile } from "./dateAdjuster/dateAdjuster.ts";
-import { modifyGeoTagsInFolderOrFile } from "./geoTagUpdater/geoTagUpdater.ts";
+import { modifyGeoTagsInFolderOrFile } from "./exif/geoTagUpdater/geoTagUpdater.ts";
 import { ExtractLogOptions } from "./jpeg/jpegParsingTypes.ts";
 
 console.log("");
