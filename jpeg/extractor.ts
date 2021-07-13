@@ -83,7 +83,8 @@ export function extract(
             logOpts.logExifTagFields || false,
             logOpts.logUnknownExifTagFields || false,
             logOpts.tagEachIfdEntry || false,
-            logOpts.tagExifPartBlocks || false
+            logOpts.tagExifPartBlocks || false,
+            []
         );
         result.detectedByteOrder = exifDecoded.detectedByteOrder;
         if (exifDecoded.exifTableData) {
