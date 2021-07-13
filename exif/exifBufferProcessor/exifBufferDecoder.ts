@@ -17,6 +17,7 @@ import {
     EXIF_PART_NAME_EXIF_OFFSET_SPACER,
     EXIF_PART_NAME_FIRST_IFD_BLOCK,
     EXIF_PART_NAME_GPS_IFD_BLOCK,
+    EXIF_PART_NAME_GPS_OFFSET_SPACER,
     EXIF_PART_NAME_TIFF_HEADER_BLOCK
 } from "../common/exifConstants.ts";
 
@@ -36,6 +37,16 @@ import {
 export interface TiffHeaderPartTypeData extends BaseDecodedPartData {
     byteOrder: TiffByteOrder;
 }
+
+export const getTotalSpaceBeforeNextExifPart = (exifDecodedResult: ExifDecoded) => {
+    let totalSpaceBefore = 0;
+    exifDecodedResult.exifParts.forEach((exifPart) => {
+        if (exifPart.data) {
+            totalSpaceBefore += exifPart.data.rawExifData.length;
+        }
+    });
+    return totalSpaceBefore;
+};
 
 // NOTE: exifBufferOverlayer.ts has overlayExifBuffer which was essentially copied from this function- it may be good to bring these back together in future.
 export function decodeExifBuffer(
@@ -143,12 +154,7 @@ export function decodeExifBuffer(
     const exifOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.exifOffset;
 
     {
-        let totalSpaceBefore = 0;
-        exifDecodedResult.exifParts.forEach((exifPart) => {
-            if (exifPart.data) {
-                totalSpaceBefore += exifPart.data.rawExifData.length;
-            }
-        });
+        const totalSpaceBefore = getTotalSpaceBeforeNextExifPart(exifDecodedResult);
         const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, (exifOffsetRawValue || 0) + exifHeaderSize);
         const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
             name: EXIF_PART_NAME_EXIF_OFFSET_SPACER,
@@ -207,11 +213,21 @@ export function decodeExifBuffer(
 
     const gpsOffsetRawValue = exifDecodedResult.exifTableData.standardFields.image?.gpsInfo;
     if (gpsOffsetRawValue) {
-        // TODO: May need to add "spacer" block here to fill in bytes before GPS location?
-        // QUESTIONS: Is GPS offset before or after JPEG thumbnail data in EXIF??
-
         const gpsOffset = gpsOffsetRawValue || 0;
-        // const gpsOffset = getRelativeExifOffset("image.gpsInfo", gpsOffsetRawValue, exifOffsetAdjust);
+        {
+            // GPS IFD is after the thumbnail data - so this "spacer" exif part will contain the thumbnail
+            const totalSpaceBefore = getTotalSpaceBeforeNextExifPart(exifDecodedResult);
+            const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, gpsOffset + exifHeaderSize);
+            const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
+                name: EXIF_PART_NAME_GPS_OFFSET_SPACER,
+                type: ExifDecodedPartType.Spacer,
+                data: {
+                    ...dataForExifPart,
+                    ...ifdData
+                }
+            };
+            exifDecodedResult.exifParts.push(exifPart);
+        }
 
         /* Process GPS IFD Record */
         exifPartIndex = 4;
@@ -243,26 +259,27 @@ export function decodeExifBuffer(
             logUnknownExifTagFields,
             exifPartIndex
         );
-    } else {
-        // TODO: Make this work when GPS data is also present (see "BUSY" & "TODO" comments in block above)
-        const nextExifPartOffset = exifBuffer.bufferLength;
-        let totalSpaceBefore = 0;
-        exifDecodedResult.exifParts.forEach((exifPart) => {
-            if (exifPart.data) {
-                totalSpaceBefore += exifPart.data.rawExifData.length;
-            }
-        });
-        const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, nextExifPartOffset + exifHeaderSize);
-        const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
-            name: EXIF_PART_NAME_EXIF_FINAL_SPACER,
-            type: ExifDecodedPartType.Spacer,
-            data: {
-                ...dataForExifPart,
-                ...ifdData
-            }
-        };
-        exifDecodedResult.exifParts.push(exifPart);
     }
+
+    /* Add final "spacer" exif part to cover the remaining data in the EXIF buffer */
+    const nextExifPartOffset = exifBuffer.bufferLength;
+    const totalSpaceBefore = getTotalSpaceBeforeNextExifPart(exifDecodedResult);
+    const finalSpacerEndIdx = nextExifPartOffset + exifHeaderSize;
+    const finalSpacerSize = finalSpacerEndIdx - totalSpaceBefore;
+    console.log(`FINAL SPACER SIZE: ${finalSpacerSize}`);
+    const dataForExifPart = exifBuffer.getDataForExifPartInRange(totalSpaceBefore, finalSpacerEndIdx);
+    const exifPart: ExifDecodedPart<ImageFileDirectoryPartTypeData> = {
+        name: EXIF_PART_NAME_EXIF_FINAL_SPACER,
+        type: ExifDecodedPartType.Spacer,
+        data: {
+            ...dataForExifPart,
+            ...ifdData
+        }
+    };
+    exifDecodedResult.exifParts.push(exifPart);
+
+    const totalSpace = getTotalSpaceBeforeNextExifPart(exifDecodedResult);
+    console.log(`TOTAL SPACE: ${totalSpace} vs ${exifBuffer.bufferLength}`);
 
     if (logExifDataDecoded) {
         console.log("");

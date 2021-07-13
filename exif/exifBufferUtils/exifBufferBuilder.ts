@@ -143,7 +143,13 @@ export const buildModifiedExifMetaData = (
     let newGpsInfoOffset = 0;
     let finalSpacerFound = false;
     let finalSpacerProcessed = false;
+    // TODO: Remove the code below... looks like it isn't being used
+    // let totalSize = 0;
+    // exifParts.forEach(exifPart => {
+    //     totalSize += exifPart.data?.rawExifData.length || 0;
+    // });
     // BUSY HERE- need to find out how to insert a tag for GPS offset into the main IFD???  (need to find out which IFD should contain it)
+    const hasGpsIfdBlock = exifParts.filter(part => part.name === EXIF_PART_NAME_GPS_IFD_BLOCK);
     exifParts.forEach((exifPart) => {
         if (exifPart.name === EXIF_PART_NAME_EXIF_FINAL_SPACER) {
             finalSpacerFound = true;
@@ -162,7 +168,7 @@ export const buildModifiedExifMetaData = (
             chars += numberToHexString(exifPart.data.rawExifData[idx], undefined, true);
         }
         console.log(`${exifPart.name} LEN ${exifPart.data.rawExifData.length} CHARS ${chars}`);
-        if (finalSpacerFound && !finalSpacerProcessed) {
+        if (!hasGpsIfdBlock && finalSpacerFound && !finalSpacerProcessed) {
             finalSpacerProcessed = true;
             const gpsInfoExifPart = buildGpsInfoExifPart(byteOrder, updateLatitudeValue, updateLongitudeValue, newGpsInfoOffset);
             result = result.concat(Array.from(gpsInfoExifPart.data?.rawExifData));

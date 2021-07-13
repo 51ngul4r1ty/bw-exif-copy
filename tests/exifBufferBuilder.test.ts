@@ -25,8 +25,31 @@ Deno.test({
 
         // act
         const actual = buildModifiedExifMetaData(TiffByteOrder.Intel, fileContents.exifParts, fileContents.exifTableData, updateLatitudeValue, updateLongitudeValue, updateElevationValue);
-        
+
+        // debug
+        let actualIdx = 0;
+        let expectedIdx = 0;
+        const actualBuffer = actual || [];
+        const expectedBuffer = fileContents.fullExifMetaData || [];
+        let actualByte: number = 0;
+        let expectedByte: number = 0;
+        let found: boolean = false;
+        while (actualByte === expectedByte && actualIdx < actualBuffer.length && expectedIdx < expectedBuffer.length) {
+            actualByte  = actualBuffer[actualIdx];
+            expectedByte = expectedBuffer[expectedIdx];
+            if (actualByte !== expectedByte) {
+                found = true;
+                console.log(`MISMATCH FOUND AT IDX ${actualIdx}: ${actualByte} vs ${expectedByte}`);
+            }
+            actualIdx++;
+            expectedIdx++;
+        }
+        if (!found) {
+            console.log(`MISMATCH IS BUFFER SIZE DIFF: ${actualBuffer.length} vs ${expectedBuffer.length}`);
+        }
+
         // assert
-        assertEquals(actual!.length, fileContents.fullExifMetaData!.length);
+        const expectedLength = fileContents.fullExifMetaData!.length;
+        assertEquals(actual!.length, expectedLength);
     }
 });
