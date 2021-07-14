@@ -6,7 +6,7 @@ import { JpegParser } from "./jpegParser.ts";
 import { ExtractLogOptions, ExtractUserOptions } from "./jpegParsingTypes.ts";
 import { JpegData } from "./jpegData.ts";
 import { MemoryManager } from "../misc/memoryManager.ts";
-import { decodeExifBuffer } from "../exif/exifBufferProcessor/exifBufferDecoder.ts";
+import { processExifBuffer } from "../exif/exifBufferProcessor/exifBufferDecoder.ts";
 import { convertToJfifResolutionMetaData } from "./jfifMetaDataConverters.ts";
 
 // consts/enums
@@ -76,7 +76,7 @@ export function extract(
     if (!parserResult.exifBufferWithHeader) {
         console.log("INFO: File has no EXIF fileMarkerData");
     } else {
-        const exifDecoded = decodeExifBuffer(
+        const exifDecoded = processExifBuffer(
             parserResult.exifBufferWithHeader,
             logOpts.logExifDataDecoded || false,
             logOpts.logExifBufferUsage || false,
