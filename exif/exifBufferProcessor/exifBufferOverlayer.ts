@@ -5,12 +5,21 @@ import { ExifDecoded } from "../../types/exifBufferDecoderTypes.ts";
 // utils
 import { cloneUint18Array } from "../../misc/jsUtils.ts";
 
-export const overlayExifBuffer = (exifBufferWithHeader: Uint8Array, exifDecodedResult: ExifDecoded, overlayTagItems: OverlayTagItem[]) => {
+export interface OverlayResult {
+    remainingTags: OverlayTagItem[];
+}
+
+export const overlayExifBuffer = (exifBufferWithHeader: Uint8Array, exifDecodedResult: ExifDecoded, overlayTagItems: OverlayTagItem[]): OverlayResult => {
+    const result: OverlayResult = {
+        remainingTags: []
+    }
     exifDecodedResult.overlayResult = cloneUint18Array(exifBufferWithHeader);
     let replacedCount = 0;
     overlayTagItems.forEach((overlayTagItem) => {
         const fieldValueLocation = exifDecodedResult.exifTableData!.fieldValueLocations[overlayTagItem.tagNumber];
-        if (fieldValueLocation) {
+        if (!fieldValueLocation) {
+            result.remainingTags.push(overlayTagItem);
+        } else {
             let replaceMode = ReplaceMode.ValueInContainer;
             if (fieldValueLocation.containerLength === null) {
                 if (overlayTagItem.value.length && fieldValueLocation.length === overlayTagItem.value.length) {
@@ -65,4 +74,5 @@ export const overlayExifBuffer = (exifBufferWithHeader: Uint8Array, exifDecodedR
             `Unable to replace all EXIF attributes: replaced ${replacedCount} out of ${overlayTagItems.length} items.`
         );
     }
+    return result;
 };

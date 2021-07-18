@@ -27,6 +27,7 @@ import {
     GpsRefType
 } from "../../utils/conversionUtil.ts";
 import { valueToTiffBytes } from "../../utils/tiffUtils.ts";
+import { hasGpsIfdBlock } from "./exifPartUtils.ts";
 
 export const buildIfdEntry = (tagNumber: number, valueBytes: number[]): ImageFileDirectoryEntry => ({
     tagNumber,
@@ -133,8 +134,8 @@ export const buildModifiedExifMetaData = (
         return null; // not going to add tags when there is no EXIF data to start with!
     }
     let result: number[] = [];
-    const gpsIfdBlocks = exifParts.filter((exifPart) => exifPart.name === EXIF_PART_NAME_GPS_IFD_BLOCK);
-    const needToAddGpsExifPart = !gpsIfdBlocks.length;
+    const alreadyHasGpsBlock = hasGpsIfdBlock(exifParts);
+    const needToAddGpsExifPart = !alreadyHasGpsBlock;
     const existingGpsInfoOffset = exifTableData?.standardFields.image?.gpsInfo || 0;
     if (needToAddGpsExifPart && existingGpsInfoOffset) {
         throw new Error("Unxpected condition: no GPS exif parts found, but GPS Info Offset is set!");
@@ -149,7 +150,6 @@ export const buildModifiedExifMetaData = (
     //     totalSize += exifPart.data?.rawExifData.length || 0;
     // });
     // BUSY HERE- need to find out how to insert a tag for GPS offset into the main IFD???  (need to find out which IFD should contain it)
-    const hasGpsIfdBlock = exifParts.filter(part => part.name === EXIF_PART_NAME_GPS_IFD_BLOCK);
     exifParts.forEach((exifPart) => {
         if (exifPart.name === EXIF_PART_NAME_EXIF_FINAL_SPACER) {
             finalSpacerFound = true;
@@ -168,7 +168,7 @@ export const buildModifiedExifMetaData = (
             chars += numberToHexString(exifPart.data.rawExifData[idx], undefined, true);
         }
         console.log(`${exifPart.name} LEN ${exifPart.data.rawExifData.length} CHARS ${chars}`);
-        if (!hasGpsIfdBlock && finalSpacerFound && !finalSpacerProcessed) {
+        if (!alreadyHasGpsBlock && finalSpacerFound && !finalSpacerProcessed) {
             finalSpacerProcessed = true;
             const gpsInfoExifPart = buildGpsInfoExifPart(byteOrder, updateLatitudeValue, updateLongitudeValue, newGpsInfoOffset);
             result = result.concat(Array.from(gpsInfoExifPart.data?.rawExifData));
